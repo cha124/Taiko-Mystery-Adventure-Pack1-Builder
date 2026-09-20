@@ -8,7 +8,6 @@ version = "0.1.0"
 description = "Safety-first diagnostic foundation for a Taiko Pack1 custom song builder"
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "MIT" }
 authors = [{ name = "Taiko Pack1 Builder contributors" }]
 dependencies = []
 
@@ -21,4 +20,3 @@ include = ["app*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra"
-
