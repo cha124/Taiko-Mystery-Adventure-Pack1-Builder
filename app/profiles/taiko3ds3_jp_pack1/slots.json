@@ -623,6 +623,8 @@
       "internal_id": "akb347",
       "capacity": 2035712,
       "protected": true,
+      "replacement_eligible": false,
+      "protection_reason": "known unresolved source-reference anomaly",
       "record_key": "DSONG_AKB347",
       "music_info_key": "d_akb347"
     },

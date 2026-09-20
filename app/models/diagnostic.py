@@ -19,7 +19,8 @@ class DiagnosticReport:
     compatibility: dict[str, Any] = field(default_factory=dict)
     reference_validation: dict[str, Any] = field(default_factory=dict)
     issues: list[ValidationIssue] = field(default_factory=list)
-    schema_version: int = 1
+    include_source_path: bool = False
+    schema_version: int = 2
     generated_at: str = field(
         default_factory=lambda: datetime.now(timezone.utc).isoformat()
     )
@@ -32,17 +33,20 @@ class DiagnosticReport:
         issues = [issue.to_dict() for issue in self.issues]
         errors = [issue for issue in issues if issue["severity"] == "ERROR"]
         warnings = [issue for issue in issues if issue["severity"] == "WARNING"]
+        source: dict[str, Any] = {
+            "filename": self.source.name,
+            "size": self.source_size,
+            "sha256": self.source_sha256,
+        }
+        if self.include_source_path:
+            source["absolute_path"] = str(self.source.resolve())
         return {
             "schema_version": self.schema_version,
             "generated_at": self.generated_at,
             "status": self.status,
             "static_validation": self.status,
             "device_validation": "NOT_TESTED",
-            "source": {
-                "path": str(self.source.resolve()),
-                "size": self.source_size,
-                "sha256": self.source_sha256,
-            },
+            "source": source,
             "profile": self.profile,
             "game_profile": self.profile,
             "compatibility": self.compatibility,

@@ -77,6 +77,7 @@ class ValidationIssue:
     message: str
     location: str | None = None
     details: dict[str, Any] = field(default_factory=dict)
+    classification: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         result: dict[str, Any] = {
@@ -88,6 +89,8 @@ class ValidationIssue:
             result["location"] = self.location
         if self.details:
             result["details"] = self.details
+        if self.classification is not None:
+            result["classification"] = self.classification
         return result
 
 

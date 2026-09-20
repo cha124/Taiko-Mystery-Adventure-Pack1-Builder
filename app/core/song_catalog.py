@@ -61,6 +61,8 @@ def load_song_catalog(name: str) -> SongCatalog:
             internal_id=raw.get("internal_id"),
             capacity=raw.get("capacity"),
             protected=bool(raw.get("protected", True)),
+            replacement_eligible=bool(raw.get("replacement_eligible", False)),
+            protection_reason=raw.get("protection_reason"),
             verified=payload.get("status") == "verified",
         )
         songs.append(
@@ -77,10 +79,10 @@ def load_song_catalog(name: str) -> SongCatalog:
     )
 
 
-def profile_diagnostic(profile: dict[str, Any], title_id: int) -> dict[str, Any]:
-    title_hex = f"{title_id:016x}"
+def profile_diagnostic(profile: dict[str, Any], title_id: int | None) -> dict[str, Any]:
+    title_hex = f"{title_id:016x}" if title_id is not None else None
     allowed = {str(value).lower().removeprefix("0x") for value in profile["allowed_title_ids"]}
-    title_match: bool | None = title_hex in allowed if allowed else None
+    title_match: bool | None = title_hex in allowed if allowed and title_hex is not None else None
     return {
         "id": profile["id"],
         "display_name": profile["display_name"],

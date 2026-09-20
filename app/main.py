@@ -19,6 +19,11 @@ def _parser() -> argparse.ArgumentParser:
     diagnose.add_argument("source", type=Path, help="path to the source CIA")
     diagnose.add_argument("--output", type=Path, help="atomic JSON report destination")
     diagnose.add_argument(
+        "--include-source-path",
+        action="store_true",
+        help="include the absolute source path in JSON output (off by default)",
+    )
+    diagnose.add_argument(
         "--profile",
         default="taiko3ds3_jp_pack1",
         help="profile directory name (default: %(default)s)",
@@ -32,13 +37,18 @@ def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     if args.command == "diagnose":
         try:
-            report = run_diagnostic(args.source, profile_name=args.profile, output=args.output)
+            report = run_diagnostic(
+                args.source,
+                profile_name=args.profile,
+                output=args.output,
+                include_source_path=args.include_source_path,
+            )
         except (OSError, ValueError) as exc:
             print(f"diagnostic failed: {exc}", file=sys.stderr)
             return 3
         payload = report.to_dict()
         print(f"CIA DIAGNOSTIC: {report.status}")
-        print(f"Title ID: {payload['cia']['title_id']}")
+        print(f"Title ID: {payload.get('title_id') or '(unavailable)'}")
         print(f"Detected songs: {payload['summary']['detected_song_count']}")
         print(f"Errors: {payload['summary']['error_count']}")
         print(f"Warnings: {payload['summary']['warning_count']}")
@@ -58,8 +68,14 @@ def main(argv: list[str] | None = None) -> int:
         except (OSError, TjaDecodeError) as exc:
             print(f"TJA INVALID\n\n{exc}", file=sys.stderr)
             return 3
-        valid = report.validation.is_valid
-        print("TJA VALID" if valid else "TJA INVALID")
+        valid = report.syntax_valid
+        print(f"TJA SYNTAX: {'VALID' if valid else 'INVALID'}")
+        print(f"TARGET CONVERSION: {report.conversion_eligibility.value}")
+        if report.conversion_blockers:
+            print()
+            print("Blockers:")
+            for blocker in report.conversion_blockers:
+                print(f"- {blocker}")
         print()
         print(f"Title: {report.document.header.title or '(missing)'}")
         print(f"BPM: {report.document.header.bpm or '(invalid/missing)'}")
@@ -73,7 +89,11 @@ def main(argv: list[str] | None = None) -> int:
             print(f"{prefix}{message.severity.value}: {message.message}")
         print(f"Errors: {len(report.validation.errors)}")
         print(f"Warnings: {len(report.validation.warnings)}")
-        return 0 if valid else 2
+        if not valid:
+            return 2
+        if not report.conversion_eligible or report.validation.warnings:
+            return 1
+        return 0
     return 3
 
 

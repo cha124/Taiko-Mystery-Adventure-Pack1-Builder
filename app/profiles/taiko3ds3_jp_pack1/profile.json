@@ -19,6 +19,18 @@
   ],
   "slot_catalog_status": "verified",
   "songinfo_schema_status": "verified",
+  "known_baseline_anomalies": [
+    {
+      "content_index": 69,
+      "code": "PACK1_CHART_KEY_MISMATCH",
+      "expected": {
+        "songinfo_chart_key": "akb437",
+        "romfs_chart_keys": ["akb347"]
+      },
+      "replacement_eligible": false,
+      "reason": "known unresolved source-reference anomaly"
+    }
+  ],
   "verified_observations": {
     "content_count": 78,
     "song_slot_count": 77,
@@ -27,7 +39,7 @@
     "all_contents_have_ivfc_romfs": true,
     "songinfo_pointer_count": 6,
     "musicinfo_pointer_count": 3,
-    "known_reference_errors": 1
+    "known_baseline_anomalies": 1
   },
-  "notes": "Read-only structure verified from the listed CIA SHA-256. Device behavior is not tested. Content 69 contains a verified SongInfo/chart-key mismatch and must remain a diagnostic error."
+  "notes": "Read-only structure verified from the listed CIA SHA-256. Device behavior is not tested. Content 69 contains an exact known baseline anomaly; it remains visible as a warning and is never replacement eligible."
 }
