@@ -1,8 +1,26 @@
 {
   "schema_version": 1,
-  "supported": [],
-  "warning": [],
-  "unsupported": [],
-  "status": "not_implemented"
+  "supported": [
+    "START",
+    "END",
+    "BPMCHANGE",
+    "SCROLL",
+    "MEASURE",
+    "DELAY"
+  ],
+  "warning": [
+    "BRANCHSTART",
+    "BRANCHEND",
+    "N",
+    "E",
+    "M",
+    "GOGOSTART",
+    "GOGOEND",
+    "BARLINEON",
+    "BARLINEOFF",
+    "negative DELAY"
+  ],
+  "unsupported": ["all unknown commands"],
+  "status": "parser_and_static_validation_only",
+  "notes": "Warning commands are preserved but their target-game semantics are not certified. Unknown commands are errors."
 }
-
