@@ -24,6 +24,11 @@ class CommandSupport(str, Enum):
     UNKNOWN = "unknown"
 
 
+class ConversionEligibility(str, Enum):
+    ELIGIBLE = "ELIGIBLE"
+    BLOCKED = "BLOCKED"
+
+
 @dataclass(frozen=True)
 class TjaHeaderEntry:
     name: str

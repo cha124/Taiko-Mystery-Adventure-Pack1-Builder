@@ -177,14 +177,28 @@ def parse_tja(
         if current is None:
             return
         if note_parts or measure_location is not None:
-            messages.append(
-                _message(
-                    "TJA_UNTERMINATED_MEASURE",
-                    "Measure is not terminated by a comma before #END.",
-                    measure_location or current.start_location,
+            control_only = (
+                not note_parts
+                and bool(measure_commands)
+                and all(
+                    command.support is CommandSupport.RECOGNIZED_UNSUPPORTED
+                    for command in measure_commands
                 )
             )
-            finalize_measure(False)
+            if control_only:
+                # Commands such as #GOGOEND and #BRANCHEND may legally follow a
+                # completed measure. They remain in source_tokens for diagnostics.
+                measure_commands = []
+                measure_location = None
+            else:
+                messages.append(
+                    _message(
+                        "TJA_UNTERMINATED_MEASURE",
+                        "Measure is not terminated by a comma before #END.",
+                        measure_location or current.start_location,
+                    )
+                )
+                finalize_measure(False)
         current.end_location = end_location
         courses.append(
             TjaCourse(
