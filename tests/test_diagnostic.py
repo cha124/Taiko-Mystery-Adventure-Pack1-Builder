@@ -38,7 +38,18 @@ class DiagnosticTests(unittest.TestCase):
             {issue.code for issue in report.issues},
         )
 
+    def test_unencrypted_content_hash_mismatch_is_rejected(self) -> None:
+        source = self.root / "tampered.bin"
+        data = bytearray(make_synthetic_cia(contents=(b"payload",)))
+        data[-1] ^= 0xFF
+        source.write_bytes(data)
+        report = run_diagnostic(source)
+        self.assertEqual(report.status, "FAIL")
+        self.assertIn(
+            "CIA_CONTENT_HASH_MISMATCH",
+            {issue.code for issue in report.issues},
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
-

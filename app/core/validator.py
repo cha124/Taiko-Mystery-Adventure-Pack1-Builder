@@ -43,6 +43,21 @@ def validate_cia(image: CiaImage, profile: dict[str, object]) -> list[Validation
                         location,
                     )
                 )
+            elif not (content.content_type & 0x0001) and (
+                content.actual_sha256 != content.sha256
+            ):
+                issues.append(
+                    ValidationIssue(
+                        "CIA_CONTENT_HASH_MISMATCH",
+                        "ERROR",
+                        "Unencrypted content does not match the SHA-256 stored in the TMD.",
+                        location,
+                        {
+                            "expected": content.sha256,
+                            "actual": content.actual_sha256,
+                        },
+                    )
+                )
 
     if selected_sizes > image.declared_content_size:
         issues.append(
@@ -100,4 +115,3 @@ def validate_cia(image: CiaImage, profile: dict[str, object]) -> list[Validation
         )
 
     return issues
-
