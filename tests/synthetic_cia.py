@@ -3,6 +3,8 @@ from __future__ import annotations
 import hashlib
 import struct
 
+from tests.synthetic_romfs import make_synthetic_romfs
+
 
 def align(value: int, boundary: int = 0x40) -> int:
     return (value + boundary - 1) & ~(boundary - 1)
@@ -67,15 +69,18 @@ def make_synthetic_cia(
     return bytes(image)
 
 
-def make_synthetic_ncch() -> bytes:
+def make_synthetic_ncch(romfs: bytes | None = None) -> bytes:
     media_unit = 0x200
-    payload = bytearray(media_unit * 3)
+    romfs = make_synthetic_romfs() if romfs is None else romfs
+    romfs_units = (len(romfs) + media_unit - 1) // media_unit
+    total_units = 1 + romfs_units
+    payload = bytearray(media_unit * total_units)
     payload[0x100:0x104] = b"NCCH"
-    struct.pack_into("<I", payload, 0x104, 3)
+    struct.pack_into("<I", payload, 0x104, total_units)
     struct.pack_into("<Q", payload, 0x108, 0x1122334455667788)
     struct.pack_into("<Q", payload, 0x118, 0x0004000000000001)
     payload[0x150:0x160] = b"CTR-P-SYNTH\0\0\0\0\0"
     payload[0x18F] = 0x04  # NoCrypto; content-unit exponent remains zero.
-    struct.pack_into("<II", payload, 0x1B0, 1, 1)
-    payload[media_unit : media_unit + 4] = b"IVFC"
+    struct.pack_into("<II", payload, 0x1B0, 1, romfs_units)
+    payload[media_unit : media_unit + len(romfs)] = romfs
     return bytes(payload)

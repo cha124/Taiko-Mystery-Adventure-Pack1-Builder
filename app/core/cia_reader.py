@@ -17,6 +17,7 @@ from app.core.binary import (
     u64be,
     u64le,
 )
+from app.core.romfs_reader import read_romfs
 
 CIA_MIN_HEADER_SIZE = 0x2020
 CONTENT_INDEX_OFFSET = 0x20
@@ -92,6 +93,21 @@ class CiaImage:
     contents: tuple[TmdContentRecord, ...]
 
     def to_dict(self) -> dict[str, Any]:
+        romfs_files: list[dict[str, Any]] = []
+        for content in self.contents:
+            if not content.ncch:
+                continue
+            romfs = content.ncch.get("romfs")
+            if not isinstance(romfs, dict):
+                continue
+            for entry in romfs.get("files", []):
+                romfs_files.append(
+                    {
+                        "content_index": content.index,
+                        "content_id": f"{content.content_id:08x}",
+                        **entry,
+                    }
+                )
         return {
             "header_size": self.header_size,
             "type": self.cia_type,
@@ -102,6 +118,7 @@ class CiaImage:
             "selected_content_count": sum(c.selected for c in self.contents),
             "sections": [section.to_dict() for section in self.sections],
             "contents": [content.to_dict() for content in self.contents],
+            "romfs_files": romfs_files,
         }
 
 
@@ -160,6 +177,9 @@ def _read_ncch(
             romfs_magic_bytes = bytes(data[file_offset + romfs_offset : file_offset + romfs_offset + 4])
             romfs_magic = romfs_magic_bytes.hex()
             romfs_status = "ivfc_detected" if romfs_magic_bytes == b"IVFC" else "unsupported_magic"
+    romfs_details: dict[str, Any] | None = None
+    if romfs_status == "ivfc_detected":
+        romfs_details = read_romfs(data, file_offset + romfs_offset, romfs_size).to_dict()
 
     product_raw = bytes(data[file_offset + 0x150 : file_offset + 0x160]).split(b"\0", 1)[0]
     try:
@@ -180,6 +200,10 @@ def _read_ncch(
             "size": romfs_size,
             "status": romfs_status,
             "magic": romfs_magic,
+            "directory_count": romfs_details["directory_count"] if romfs_details else None,
+            "file_count": romfs_details["file_count"] if romfs_details else None,
+            "directories": romfs_details["directories"] if romfs_details else [],
+            "files": romfs_details["files"] if romfs_details else [],
         },
     }
 
