@@ -11,6 +11,9 @@ requires-python = ">=3.11"
 authors = [{ name = "Taiko Pack1 Builder contributors" }]
 dependencies = []
 
+[project.optional-dependencies]
+dev = ["pytest>=8,<10"]
+
 [project.scripts]
 taiko-pack1-builder = "app.main:main"
 

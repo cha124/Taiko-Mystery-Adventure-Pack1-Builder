@@ -1,10 +1,15 @@
 *.cia
 *.3ds
+*.cci
 *.tik
+*.cetk
+*.key
+*.keys
 *.ogg
 *.mp3
 *.aac
 *.naac
+*.flac
 
 /private_test_data/
 /work/
@@ -14,6 +19,7 @@
 /secrets/
 
 .venv/
+venv/
 __pycache__/
 *.py[cod]
 .pytest_cache/
@@ -22,4 +28,3 @@ htmlcov/
 dist/
 build/
 *.egg-info/
-
