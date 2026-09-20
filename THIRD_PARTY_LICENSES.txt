@@ -1,0 +1,4 @@
+Taiko Pack1 Builder currently has no runtime third-party dependencies.
+
+External tools planned for later milestones are not bundled at this stage.
+

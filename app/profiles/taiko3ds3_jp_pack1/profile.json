@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "id": "taiko3ds3-jp-pack1",
+  "display_name": "Taiko Drum Master Dokodon! Mystery Adventure - DLC Pack1",
+  "certification": "not_tested",
+  "allowed_title_ids": [],
+  "slot_catalog_status": "unverified",
+  "songinfo_schema_status": "unverified",
+  "notes": "Title IDs, slots, and SongInfo offsets must be populated only from legally supplied, verified diagnostic data. Empty values are intentionally fail-safe."
+}
+

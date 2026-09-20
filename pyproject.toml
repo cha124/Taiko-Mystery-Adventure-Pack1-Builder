@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "taiko-pack1-builder"
+version = "0.1.0"
+description = "Safety-first diagnostic foundation for a Taiko Pack1 custom song builder"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Taiko Pack1 Builder contributors" }]
+dependencies = []
+
+[project.scripts]
+taiko-pack1-builder = "app.main:main"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
