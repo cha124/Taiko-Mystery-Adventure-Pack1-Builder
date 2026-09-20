@@ -1,40 +1,65 @@
 # Taiko Mystery Adventure Pack1 Custom Song Builder
 
-Windows向けカスタム曲ビルダーの、安全性を優先した実装です。現在は **Milestone 1: Diagnostic Core** までを対象とし、CIAを書き換えません。
+ユーザー所有の「太鼓の達人 ドコドン！ミステリーアドベンチャー」日本版DLC Pack1を、安全に診断し、将来カスタム曲へ置換するためのWindows向けプロジェクトです。
 
-## 現在できること
+現在の実装範囲はMilestone 0～2です。**CIA・RomFS・SongInfoを書き換える機能はなく、完全に読み取り専用です。** 音声変換、NAAC生成、tja2fumen接続、slot allocator、GUI、EXE化も未実装です。
+
+## 実装済み
 
 - CIAヘッダー、証明書、Ticket、TMD、Content、Metaの境界解析
-- TMDのTitle IDとContent recordの解析
-- Content index、Content count、サイズ、重複、切り詰めの検査
-- 入力CIA全体と各ContentのSHA-256計算
-- 機械可読なJSON診断レポート
-- Pack1プロファイルの認定状態表示
+- Title ID、content index/ID/type/size、SHA-256の診断
+- 未暗号化NCCHヘッダー、ExeFS/RomFS領域、IVFC magicの安全な確認
+- 安定ID（content index、content ID、内部ID）を前提とする型付きSongCatalog基盤
+- 実ポインタからのSongInfo文字列読取、範囲・NUL終端・空必須値・参照存在検査
+- UTF-8/CP932を厳格にデコードするTJA Lexer/Parser/Validator/Normalizer
+- `Decimal`によるBPM/OFFSET/DELAY/SCROLL、`Fraction`によるMEASURE保持
+- 空白なし命令、複数行小節、Easy～Ura、Unicode TITLE/WAVEの処理
+- 入力CIAのSHA-256と原子的JSON診断レポート
 
-SongInfoや曲枠の実オフセットは未確認値を推測せず、プロファイルが認定されるまでは `NOT_TESTED` と報告します。秘密鍵を要求せず、暗号化Contentの復号やCIAの変更は行いません。
+Pack1固有の曲枠とSongInfoスキーマは、実データで認定されるまで空のままです。暗号化Contentは鍵なしで推測解析せず、`encrypted_not_inspected`と報告します。
 
-## 実行
+## 開発環境
+
+Python 3.11以上を使用します。確認環境はPython 3.14です。
 
 ```powershell
-python -m app.main diagnose "path\to\base.cia" --output "output\diagnostic.json"
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.lock
+.\.venv\Scripts\python.exe -m pip install -e .
 ```
 
-終了コードは、PASSが`0`、警告ありが`1`、診断エラーが`2`、入力自体を読めない場合が`3`です。`--output`を省略した場合は標準出力へJSONを出します。
+## CIA診断
+
+```powershell
+.\.venv\Scripts\python.exe -m app.main diagnose "path\to\base.cia" --output "work\diagnostic_report.json"
+```
+
+コンソールには診断状態、Title ID、検出曲数、ERROR数、WARNING数を表示します。JSONは`--output`を明示した場合だけ生成し、入力CIAの隣へ勝手に書きません。
+
+終了コードはPASSが`0`、警告ありが`1`、診断ERRORが`2`、入力を読めない場合が`3`です。静的検証と実機検証は区別され、実機状態は常に`NOT_TESTED`です。
+
+## TJA診断
+
+```powershell
+.\.venv\Scripts\python.exe -m app.main tja-check "example.tja"
+```
+
+未知命令、壊れたMEASURE、未終端小節などは行・列・元テキスト付きERRORになります。Normalizerは空白を統一しますが、値やノーツを別の意味へ変換しません。
 
 ## テスト
 
-テストは著作物を含まない合成バイト列だけを使います。
+実ゲームデータや実楽曲は使用せず、合成CIA/NCCH、合成SongInfo、短い自作TJAだけを使用します。
 
 ```powershell
-python -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m pytest
 ```
 
 ## 安全上の制約
 
-- CIA、音源、鍵、ユーザーの曲データはGit管理対象外です。
-- 入力CIAをin-place変更するコードはありません。
-- 静的診断のPASSを実機互換性の保証として表示しません。
-- Pack1固有のプロファイル値は、検証済みデータから確定するまで未認定です。
+- CIA、3DS/CCI、Ticket、秘密鍵、音源、NAACはGit管理対象外です。
+- 入力をin-place変更するコードはありません。
+- 未知命令や不明構造を黙って無視しません。
+- 静的PASSを3DS実機互換性の保証として表示しません。
+- 秘密鍵の取得・配布機能はありません。
 
-今後はTJA parser、Audio/NAAC、batch slot allocator、SongInfo/title、CIA writer、独立再検証、GUIの順に追加します。
-
+次工程へ進む前に、ユーザー所有Pack1 CIAから読み取り専用レポートを取得し、Title ID、NCCH暗号化状態、曲枠、SongInfoポインタ構造を認定する必要があります。
