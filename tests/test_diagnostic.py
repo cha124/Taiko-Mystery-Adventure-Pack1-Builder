@@ -15,13 +15,14 @@ class DiagnosticTests(unittest.TestCase):
         self.addCleanup(self.temporary.cleanup)
         self.root = Path(self.temporary.name)
 
-    def test_report_is_atomic_json_and_does_not_claim_device_pass(self) -> None:
+    def test_unknown_cia_fails_fingerprint_and_does_not_claim_device_pass(self) -> None:
         source = self.root / "source.bin"
         output = self.root / "nested" / "report.json"
         source.write_bytes(make_synthetic_cia())
         report = run_diagnostic(source, output=output)
         saved = json.loads(output.read_text(encoding="utf-8"))
-        self.assertEqual(report.status, "WARNING")
+        self.assertEqual(report.status, "FAIL")
+        self.assertEqual(saved["compatibility"]["status"], "UNSUPPORTED")
         self.assertEqual(saved["device_validation"], "NOT_TESTED")
         self.assertEqual(saved["source"]["sha256"], report.source_sha256)
         self.assertEqual(list(output.parent.glob("*.tmp")), [])

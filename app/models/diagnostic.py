@@ -16,6 +16,8 @@ class DiagnosticReport:
     cia: dict[str, Any]
     profile: dict[str, Any]
     song_catalog: dict[str, Any] = field(default_factory=dict)
+    compatibility: dict[str, Any] = field(default_factory=dict)
+    reference_validation: dict[str, Any] = field(default_factory=dict)
     issues: list[ValidationIssue] = field(default_factory=list)
     schema_version: int = 1
     generated_at: str = field(
@@ -27,6 +29,9 @@ class DiagnosticReport:
         return status_from_issues(self.issues)
 
     def to_dict(self) -> dict[str, Any]:
+        issues = [issue.to_dict() for issue in self.issues]
+        errors = [issue for issue in issues if issue["severity"] == "ERROR"]
+        warnings = [issue for issue in issues if issue["severity"] == "WARNING"]
         return {
             "schema_version": self.schema_version,
             "generated_at": self.generated_at,
@@ -39,12 +44,23 @@ class DiagnosticReport:
                 "sha256": self.source_sha256,
             },
             "profile": self.profile,
+            "game_profile": self.profile,
+            "compatibility": self.compatibility,
+            "title_id": self.cia.get("title_id"),
+            "cia_sha256": self.source_sha256,
+            "content_count": self.cia.get("tmd_content_count"),
+            "contents": self.cia.get("contents", []),
+            "romfs_files": self.cia.get("romfs_files", []),
             "cia": self.cia,
             "song_catalog": self.song_catalog,
+            "song_slots": self.song_catalog.get("songs", []),
+            "reference_validation": self.reference_validation,
             "summary": {
                 "detected_song_count": self.song_catalog.get("song_count", 0),
                 "error_count": sum(i.severity == "ERROR" for i in self.issues),
                 "warning_count": sum(i.severity == "WARNING" for i in self.issues),
             },
-            "issues": [issue.to_dict() for issue in self.issues],
+            "issues": issues,
+            "errors": errors,
+            "warnings": warnings,
         }

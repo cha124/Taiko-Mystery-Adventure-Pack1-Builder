@@ -88,4 +88,5 @@ def profile_diagnostic(profile: dict[str, Any], title_id: int) -> dict[str, Any]
         "title_id_match": title_match,
         "slot_catalog_status": profile["slot_catalog_status"],
         "songinfo_schema_status": profile["songinfo_schema_status"],
+        "device_tested": bool(profile.get("device_tested", False)),
     }

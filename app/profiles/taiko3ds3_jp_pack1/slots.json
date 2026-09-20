@@ -1,6 +1,702 @@
+
 {
   "schema_version": 1,
-  "status": "unverified",
-  "slots": []
+  "status": "verified",
+  "verified_from_sha256": "655942fd605efc326ad1d8e7913af8c1b552e3a30548eb7d6c0233333d9373b7",
+  "replacement_status": "not_approved",
+  "slots": [
+    {
+      "content_index": 1,
+      "content_id": "0x210d0c1a",
+      "internal_id": "123koi",
+      "capacity": 2179072,
+      "protected": true,
+      "record_key": "DSONG_123KOI",
+      "music_info_key": "d_123koi"
+    },
+    {
+      "content_index": 2,
+      "content_id": "0x71d621ec",
+      "internal_id": "365lov",
+      "capacity": 2412544,
+      "protected": true,
+      "record_key": "DSONG_365LOV",
+      "music_info_key": "d_365lov"
+    },
+    {
+      "content_index": 3,
+      "content_id": "0x0fae1575",
+      "internal_id": "aiutaj",
+      "capacity": 1781760,
+      "protected": true,
+      "record_key": "DSONG_AIUTAJ",
+      "music_info_key": "d_aiutaj"
+    },
+    {
+      "content_index": 4,
+      "content_id": "0x05c75433",
+      "internal_id": "kanawk",
+      "capacity": 1531904,
+      "protected": true,
+      "record_key": "DSONG_KANAWK",
+      "music_info_key": "d_kanawk"
+    },
+    {
+      "content_index": 5,
+      "content_id": "0x32e5698e",
+      "internal_id": "akbait",
+      "capacity": 1658880,
+      "protected": true,
+      "record_key": "DSONG_AKBAIT",
+      "music_info_key": "d_akbait"
+    },
+    {
+      "content_index": 6,
+      "content_id": "0x556d1e50",
+      "internal_id": "skoant",
+      "capacity": 2551808,
+      "protected": true,
+      "record_key": "DSONG_SKOANT",
+      "music_info_key": "d_skoant"
+    },
+    {
+      "content_index": 7,
+      "content_id": "0x753414e8",
+      "internal_id": "arigat",
+      "capacity": 2027520,
+      "protected": true,
+      "record_key": "DSONG_ARIGAT",
+      "music_info_key": "d_arigat"
+    },
+    {
+      "content_index": 8,
+      "content_id": "0x0078508d",
+      "internal_id": "aruite",
+      "capacity": 2789376,
+      "protected": true,
+      "record_key": "DSONG_ARUITE",
+      "music_info_key": "d_aruite"
+    },
+    {
+      "content_index": 9,
+      "content_id": "0x5de546c5",
+      "internal_id": "bakuti",
+      "capacity": 2150400,
+      "protected": true,
+      "record_key": "DSONG_BAKUTI",
+      "music_info_key": "d_bakuti"
+    },
+    {
+      "content_index": 10,
+      "content_id": "0x03a055dc",
+      "internal_id": "blurbi",
+      "capacity": 1351680,
+      "protected": true,
+      "record_key": "DSONG_BLURBI",
+      "music_info_key": "d_blurbi"
+    },
+    {
+      "content_index": 11,
+      "content_id": "0x639f1049",
+      "internal_id": "chocod",
+      "capacity": 1605632,
+      "protected": true,
+      "record_key": "DSONG_CHOCOD",
+      "music_info_key": "d_chocod"
+    },
+    {
+      "content_index": 12,
+      "content_id": "0x3fdf0c1b",
+      "internal_id": "digmog",
+      "capacity": 1789952,
+      "protected": true,
+      "record_key": "DSONG_DIGMOG",
+      "music_info_key": "d_digmog"
+    },
+    {
+      "content_index": 13,
+      "content_id": "0x4d381edd",
+      "internal_id": "skodrg",
+      "capacity": 1724416,
+      "protected": true,
+      "record_key": "DSONG_SKODRG",
+      "music_info_key": "d_skodrg"
+    },
+    {
+      "content_index": 14,
+      "content_id": "0x01dd7196",
+      "internal_id": "egaokp",
+      "capacity": 1744896,
+      "protected": true,
+      "record_key": "DSONG_EGAOKP",
+      "music_info_key": "d_egaokp"
+    },
+    {
+      "content_index": 15,
+      "content_id": "0x14ca75d2",
+      "internal_id": "akbkac",
+      "capacity": 2170880,
+      "protected": true,
+      "record_key": "DSONG_AKBKAC",
+      "music_info_key": "d_akbkac"
+    },
+    {
+      "content_index": 16,
+      "content_id": "0x1dac4bce",
+      "internal_id": "ezdo",
+      "capacity": 1507328,
+      "protected": true,
+      "record_key": "DSONG_EZDO",
+      "music_info_key": "d_ezdo"
+    },
+    {
+      "content_index": 17,
+      "content_id": "0x01096b46",
+      "internal_id": "fparty",
+      "capacity": 1404928,
+      "protected": true,
+      "record_key": "DSONG_FPARTY",
+      "music_info_key": "d_fparty"
+    },
+    {
+      "content_index": 18,
+      "content_id": "0x72b52b79",
+      "internal_id": "flwsng",
+      "capacity": 1744896,
+      "protected": true,
+      "record_key": "DSONG_FLWSNG",
+      "music_info_key": "d_flwsng"
+    },
+    {
+      "content_index": 19,
+      "content_id": "0x68d36c4c",
+      "internal_id": "akbfly",
+      "capacity": 1802240,
+      "protected": true,
+      "record_key": "DSONG_AKBFLY",
+      "music_info_key": "d_akbfly"
+    },
+    {
+      "content_index": 20,
+      "content_id": "0x6bf271c9",
+      "internal_id": "follom",
+      "capacity": 1433600,
+      "protected": true,
+      "record_key": "DSONG_FOLLOM",
+      "music_info_key": "d_follom"
+    },
+    {
+      "content_index": 21,
+      "content_id": "0x55094c47",
+      "internal_id": "gimcho",
+      "capacity": 2056192,
+      "protected": true,
+      "record_key": "DSONG_GIMCHO",
+      "music_info_key": "d_gimcho"
+    },
+    {
+      "content_index": 22,
+      "content_id": "0x505e3af1",
+      "internal_id": "gimura",
+      "capacity": 2052096,
+      "protected": true,
+      "record_key": "DSONG_GIMURA",
+      "music_info_key": "d_gimura"
+    },
+    {
+      "content_index": 23,
+      "content_id": "0x749e2397",
+      "internal_id": "wgbhfm",
+      "capacity": 2240512,
+      "protected": true,
+      "record_key": "DSONG_WGBHFM",
+      "music_info_key": "d_wgbhfm"
+    },
+    {
+      "content_index": 24,
+      "content_id": "0x77aa51e6",
+      "internal_id": "akbhvy",
+      "capacity": 1818624,
+      "protected": true,
+      "record_key": "DSONG_AKBHVY",
+      "music_info_key": "d_akbhvy"
+    },
+    {
+      "content_index": 25,
+      "content_id": "0x16ed0178",
+      "internal_id": "kekkai",
+      "capacity": 1409024,
+      "protected": true,
+      "record_key": "DSONG_KEKKAI",
+      "music_info_key": "d_kekkai"
+    },
+    {
+      "content_index": 26,
+      "content_id": "0x37321162",
+      "internal_id": "hslove",
+      "capacity": 1314816,
+      "protected": true,
+      "record_key": "DSONG_HSLOVE",
+      "music_info_key": "d_hslove"
+    },
+    {
+      "content_index": 27,
+      "content_id": "0x20507526",
+      "internal_id": "skohmc",
+      "capacity": 1675264,
+      "protected": true,
+      "record_key": "DSONG_SKOHMC",
+      "music_info_key": "d_skohmc"
+    },
+    {
+      "content_index": 28,
+      "content_id": "0x1b2f562f",
+      "internal_id": "hotlim",
+      "capacity": 1232896,
+      "protected": true,
+      "record_key": "DSONG_HOTLIM",
+      "music_info_key": "d_hotlim"
+    },
+    {
+      "content_index": 29,
+      "content_id": "0x2cee3246",
+      "internal_id": "iwishy",
+      "capacity": 1761280,
+      "protected": true,
+      "record_key": "DSONG_IWISHY",
+      "music_info_key": "d_iwishy"
+    },
+    {
+      "content_index": 30,
+      "content_id": "0x402e66a2",
+      "internal_id": "ikenai",
+      "capacity": 1425408,
+      "protected": true,
+      "record_key": "DSONG_IKENAI",
+      "music_info_key": "d_ikenai"
+    },
+    {
+      "content_index": 31,
+      "content_id": "0x55d45481",
+      "internal_id": "m96ikz",
+      "capacity": 2002944,
+      "protected": true,
+      "record_key": "DSONG_M96IKZ",
+      "music_info_key": "d_m96ikz"
+    },
+    {
+      "content_index": 32,
+      "content_id": "0x60c17366",
+      "internal_id": "sochik",
+      "capacity": 1409024,
+      "protected": true,
+      "record_key": "DSONG_SOCHIK",
+      "music_info_key": "d_sochik"
+    },
+    {
+      "content_index": 33,
+      "content_id": "0x4c480672",
+      "internal_id": "joyful",
+      "capacity": 1499136,
+      "protected": true,
+      "record_key": "DSONG_JOYFUL",
+      "music_info_key": "d_joyful"
+    },
+    {
+      "content_index": 34,
+      "content_id": "0x6b74157a",
+      "internal_id": "jojokj",
+      "capacity": 1830912,
+      "protected": true,
+      "record_key": "DSONG_JOJOKJ",
+      "music_info_key": "d_jojokj"
+    },
+    {
+      "content_index": 35,
+      "content_id": "0x3f590fc2",
+      "internal_id": "kim9re",
+      "capacity": 1503232,
+      "protected": true,
+      "record_key": "DSONG_KIM9RE",
+      "music_info_key": "d_kim9re"
+    },
+    {
+      "content_index": 36,
+      "content_id": "0x35026d7d",
+      "internal_id": "kimsak",
+      "capacity": 1806336,
+      "protected": true,
+      "record_key": "DSONG_KIMSAK",
+      "music_info_key": "d_kimsak"
+    },
+    {
+      "content_index": 37,
+      "content_id": "0x3fbb0e91",
+      "internal_id": "kiseki",
+      "capacity": 1347584,
+      "protected": true,
+      "record_key": "DSONG_KISEKI",
+      "music_info_key": "d_kiseki"
+    },
+    {
+      "content_index": 38,
+      "content_id": "0x1ac9482a",
+      "internal_id": "kiskis",
+      "capacity": 2072576,
+      "protected": true,
+      "record_key": "DSONG_KISKIS",
+      "music_info_key": "d_kiskis"
+    },
+    {
+      "content_index": 39,
+      "content_id": "0x15d26018",
+      "internal_id": "akbftc",
+      "capacity": 1871872,
+      "protected": true,
+      "record_key": "DSONG_AKBFTC",
+      "music_info_key": "d_akbftc"
+    },
+    {
+      "content_index": 40,
+      "content_id": "0x297c6c1f",
+      "internal_id": "remior",
+      "capacity": 1986560,
+      "protected": true,
+      "record_key": "DSONG_REMIOR",
+      "music_info_key": "d_remior"
+    },
+    {
+      "content_index": 41,
+      "content_id": "0x3e0d7c8d",
+      "internal_id": "xjapan",
+      "capacity": 2076672,
+      "protected": true,
+      "record_key": "DSONG_XJAPAN",
+      "music_info_key": "d_xjapan"
+    },
+    {
+      "content_index": 42,
+      "content_id": "0x1c1874e2",
+      "internal_id": "akblbr",
+      "capacity": 1581056,
+      "protected": true,
+      "record_key": "DSONG_AKBLBR",
+      "music_info_key": "d_akblbr"
+    },
+    {
+      "content_index": 43,
+      "content_id": "0x7f754a47",
+      "internal_id": "lindal",
+      "capacity": 1679360,
+      "protected": true,
+      "record_key": "DSONG_LINDAL",
+      "music_info_key": "d_lindal"
+    },
+    {
+      "content_index": 44,
+      "content_id": "0x47195f25",
+      "internal_id": "listen",
+      "capacity": 1269760,
+      "protected": true,
+      "record_key": "DSONG_LISTEN",
+      "music_info_key": "d_listen"
+    },
+    {
+      "content_index": 45,
+      "content_id": "0x50862c23",
+      "internal_id": "lovema",
+      "capacity": 1642496,
+      "protected": true,
+      "record_key": "DSONG_LOVEMA",
+      "music_info_key": "d_lovema"
+    },
+    {
+      "content_index": 46,
+      "content_id": "0x43ed2a49",
+      "internal_id": "lovezu",
+      "capacity": 1462272,
+      "protected": true,
+      "record_key": "DSONG_LOVEZU",
+      "music_info_key": "d_lovezu"
+    },
+    {
+      "content_index": 47,
+      "content_id": "0x7e3d4f26",
+      "internal_id": "hormon",
+      "capacity": 2240512,
+      "protected": true,
+      "record_key": "DSONG_HORMON",
+      "music_info_key": "d_hormon"
+    },
+    {
+      "content_index": 48,
+      "content_id": "0x70a93322",
+      "internal_id": "memesi",
+      "capacity": 1773568,
+      "protected": true,
+      "record_key": "DSONG_MEMESI",
+      "music_info_key": "d_memesi"
+    },
+    {
+      "content_index": 49,
+      "content_id": "0x49727b64",
+      "internal_id": "minau",
+      "capacity": 1101824,
+      "protected": true,
+      "record_key": "DSONG_MINAU",
+      "music_info_key": "d_minau"
+    },
+    {
+      "content_index": 50,
+      "content_id": "0x17fb2bfa",
+      "internal_id": "misena",
+      "capacity": 1744896,
+      "protected": true,
+      "record_key": "DSONG_MISENA",
+      "music_info_key": "d_misena"
+    },
+    {
+      "content_index": 51,
+      "content_id": "0x6e686c20",
+      "internal_id": "m96tkg",
+      "capacity": 1658880,
+      "protected": true,
+      "record_key": "DSONG_M96TKG",
+      "music_info_key": "d_m96tkg"
+    },
+    {
+      "content_index": 52,
+      "content_id": "0x555f55d8",
+      "internal_id": "monkey",
+      "capacity": 1490944,
+      "protected": true,
+      "record_key": "DSONG_MONKEY",
+      "music_info_key": "d_monkey"
+    },
+    {
+      "content_index": 53,
+      "content_id": "0x4aa37334",
+      "internal_id": "morain",
+      "capacity": 1564672,
+      "protected": true,
+      "record_key": "DSONG_MORAIN",
+      "music_info_key": "d_morain"
+    },
+    {
+      "content_index": 54,
+      "content_id": "0x09965f02",
+      "internal_id": "mottai",
+      "capacity": 1589248,
+      "protected": true,
+      "record_key": "DSONG_MOTTAI",
+      "music_info_key": "d_mottai"
+    },
+    {
+      "content_index": 55,
+      "content_id": "0x14f96bb4",
+      "internal_id": "natsu",
+      "capacity": 1757184,
+      "protected": true,
+      "record_key": "DSONG_NATSU",
+      "music_info_key": "d_natsu"
+    },
+    {
+      "content_index": 56,
+      "content_id": "0x73550ac0",
+      "internal_id": "ninjbb",
+      "capacity": 1683456,
+      "protected": true,
+      "record_key": "DSONG_NINJBB",
+      "music_info_key": "d_ninjbb"
+    },
+    {
+      "content_index": 57,
+      "content_id": "0x5bec3fce",
+      "internal_id": "kishi2",
+      "capacity": 1781760,
+      "protected": true,
+      "record_key": "DSONG_KISHI2",
+      "music_info_key": "d_kishi2"
+    },
+    {
+      "content_index": 58,
+      "content_id": "0x403a0663",
+      "internal_id": "otemoy",
+      "capacity": 1486848,
+      "protected": true,
+      "record_key": "DSONG_OTEMOY",
+      "music_info_key": "d_otemoy"
+    },
+    {
+      "content_index": 59,
+      "content_id": "0x3e3705f4",
+      "internal_id": "polyrh",
+      "capacity": 2187264,
+      "protected": true,
+      "record_key": "DSONG_POLYRH",
+      "music_info_key": "d_polyrh"
+    },
+    {
+      "content_index": 60,
+      "content_id": "0x2a030f86",
+      "internal_id": "ponpon",
+      "capacity": 1990656,
+      "protected": true,
+      "record_key": "DSONG_PONPON",
+      "music_info_key": "d_ponpon"
+    },
+    {
+      "content_index": 61,
+      "content_id": "0x11a7793e",
+      "internal_id": "shushu",
+      "capacity": 1572864,
+      "protected": true,
+      "record_key": "DSONG_SHUSHU",
+      "music_info_key": "d_shushu"
+    },
+    {
+      "content_index": 62,
+      "content_id": "0x74024f94",
+      "internal_id": "punish",
+      "capacity": 2093056,
+      "protected": true,
+      "record_key": "DSONG_PUNISH",
+      "music_info_key": "d_punish"
+    },
+    {
+      "content_index": 63,
+      "content_id": "0x6c2c5109",
+      "internal_id": "ryusei",
+      "capacity": 1753088,
+      "protected": true,
+      "record_key": "DSONG_RYUSEI",
+      "music_info_key": "d_ryusei"
+    },
+    {
+      "content_index": 64,
+      "content_id": "0x5ccc108a",
+      "internal_id": "rindon",
+      "capacity": 1314816,
+      "protected": true,
+      "record_key": "DSONG_RINDON",
+      "music_info_key": "d_rindon"
+    },
+    {
+      "content_index": 65,
+      "content_id": "0x43303be5",
+      "internal_id": "rocket",
+      "capacity": 1310720,
+      "protected": true,
+      "record_key": "DSONG_ROCKET",
+      "music_info_key": "d_rocket"
+    },
+    {
+      "content_index": 66,
+      "content_id": "0x58322efe",
+      "internal_id": "skorpg",
+      "capacity": 1507328,
+      "protected": true,
+      "record_key": "DSONG_SKORPG",
+      "music_info_key": "d_skorpg"
+    },
+    {
+      "content_index": 67,
+      "content_id": "0x152701ae",
+      "internal_id": "skrnbo",
+      "capacity": 1241088,
+      "protected": true,
+      "record_key": "DSONG_SKRNBO",
+      "music_info_key": "d_skrnbo"
+    },
+    {
+      "content_index": 68,
+      "content_id": "0x25726d61",
+      "internal_id": "m96srb",
+      "capacity": 1642496,
+      "protected": true,
+      "record_key": "DSONG_M96SRB",
+      "music_info_key": "d_m96srb"
+    },
+    {
+      "content_index": 69,
+      "content_id": "0x516810f8",
+      "internal_id": "akb347",
+      "capacity": 2035712,
+      "protected": true,
+      "record_key": "DSONG_AKB347",
+      "music_info_key": "d_akb347"
+    },
+    {
+      "content_index": 70,
+      "content_id": "0x15ae0c81",
+      "internal_id": "kyksmj",
+      "capacity": 1564672,
+      "protected": true,
+      "record_key": "DSONG_KYKSMJ",
+      "music_info_key": "d_kyksmj"
+    },
+    {
+      "content_index": 71,
+      "content_id": "0x723b7bb0",
+      "internal_id": "sobaka",
+      "capacity": 1343488,
+      "protected": true,
+      "record_key": "DSONG_SOBAKA",
+      "music_info_key": "d_sobaka"
+    },
+    {
+      "content_index": 72,
+      "content_id": "0x169c4d51",
+      "internal_id": "10taik",
+      "capacity": 1363968,
+      "protected": true,
+      "record_key": "DSONG_10TAIK",
+      "music_info_key": "d_10taik"
+    },
+    {
+      "content_index": 73,
+      "content_id": "0x7d332701",
+      "internal_id": "k2mtom",
+      "capacity": 1667072,
+      "protected": true,
+      "record_key": "DSONG_K2MTOM",
+      "music_info_key": "d_k2mtom"
+    },
+    {
+      "content_index": 74,
+      "content_id": "0x55803fed",
+      "internal_id": "monsun",
+      "capacity": 1691648,
+      "protected": true,
+      "record_key": "DSONG_MONSUN",
+      "music_info_key": "d_monsun"
+    },
+    {
+      "content_index": 75,
+      "content_id": "0x5dbe3275",
+      "internal_id": "uminok",
+      "capacity": 1826816,
+      "protected": true,
+      "record_key": "DSONG_UMINOK",
+      "music_info_key": "d_uminok"
+    },
+    {
+      "content_index": 76,
+      "content_id": "0x0e5703d9",
+      "internal_id": "nycyok",
+      "capacity": 1359872,
+      "protected": true,
+      "record_key": "DSONG_NYCYOK",
+      "music_info_key": "d_nycyok"
+    },
+    {
+      "content_index": 77,
+      "content_id": "0x4dfa5a5d",
+      "internal_id": "zense",
+      "capacity": 1298432,
+      "protected": true,
+      "record_key": "DSONG_ZENSE",
+      "music_info_key": "d_zense"
+    }
+  ]
 }
-

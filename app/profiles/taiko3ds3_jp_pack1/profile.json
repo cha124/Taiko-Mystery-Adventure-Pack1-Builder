@@ -1,11 +1,33 @@
 {
   "schema_version": 1,
   "id": "taiko3ds3-jp-pack1",
+  "profile_id": "taiko3ds3-jp-pack1",
   "display_name": "Taiko Drum Master Dokodon! Mystery Adventure - DLC Pack1",
-  "certification": "not_tested",
-  "allowed_title_ids": [],
-  "slot_catalog_status": "unverified",
-  "songinfo_schema_status": "unverified",
-  "notes": "Title IDs, slots, and SongInfo offsets must be populated only from legally supplied, verified diagnostic data. Empty values are intentionally fail-safe."
+  "certification": "read_only_structure_verified",
+  "device_tested": false,
+  "allowed_title_ids": ["0004008c00190e00"],
+  "expected_content_count": 78,
+  "expected_content_indexes": [
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+    20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39,
+    40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59,
+    60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77
+  ],
+  "expected_product_code": "CTR-M-BT8J-00",
+  "verified_sha256": [
+    "655942fd605efc326ad1d8e7913af8c1b552e3a30548eb7d6c0233333d9373b7"
+  ],
+  "slot_catalog_status": "verified",
+  "songinfo_schema_status": "verified",
+  "verified_observations": {
+    "content_count": 78,
+    "song_slot_count": 77,
+    "romfs_file_count": 1445,
+    "all_contents_unencrypted_ncch": true,
+    "all_contents_have_ivfc_romfs": true,
+    "songinfo_pointer_count": 6,
+    "musicinfo_pointer_count": 3,
+    "known_reference_errors": 1
+  },
+  "notes": "Read-only structure verified from the listed CIA SHA-256. Device behavior is not tested. Content 69 contains a verified SongInfo/chart-key mismatch and must remain a diagnostic error."
 }
-
