@@ -4,6 +4,7 @@ import argparse
 import sys
 from pathlib import Path
 
+from app.core.audio.analyzer import run_audio_scan
 from app.core.job_runner import run_diagnostic
 from app.core.tja import check_tja_file
 from app.core.tja.decoder import TjaDecodeError
@@ -24,6 +25,21 @@ def _parser() -> argparse.ArgumentParser:
         help="include the absolute source path in JSON output (off by default)",
     )
     diagnose.add_argument(
+        "--profile",
+        default="taiko3ds3_jp_pack1",
+        help="profile directory name (default: %(default)s)",
+    )
+    audio_scan = subparsers.add_parser(
+        "audio-scan", help="inspect Pack1 NAAC/ADTS streams without modifying them"
+    )
+    audio_scan.add_argument("source", type=Path, help="path to the source CIA")
+    audio_scan.add_argument("--output", type=Path, help="atomic JSON report destination")
+    audio_scan.add_argument(
+        "--include-source-path",
+        action="store_true",
+        help="include the absolute source path in JSON output (off by default)",
+    )
+    audio_scan.add_argument(
         "--profile",
         default="taiko3ds3_jp_pack1",
         help="profile directory name (default: %(default)s)",
@@ -52,6 +68,37 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Detected songs: {payload['summary']['detected_song_count']}")
         print(f"Errors: {payload['summary']['error_count']}")
         print(f"Warnings: {payload['summary']['warning_count']}")
+        if args.output is not None:
+            print(f"Report: {args.output.resolve()}")
+        else:
+            print("JSON report not written (use --output with an explicit path).")
+        if report.status == "PASS":
+            return 0
+        if report.status == "WARNING":
+            return 1
+        return 2
+
+    if args.command == "audio-scan":
+        try:
+            report = run_audio_scan(
+                args.source,
+                output=args.output,
+                include_source_path=args.include_source_path,
+                profile_name=args.profile,
+            )
+        except (OSError, ValueError) as exc:
+            print(f"audio scan failed: {exc}", file=sys.stderr)
+            return 3
+        payload = report.to_dict()
+        summary = payload["summary"]
+        print(f"AUDIO SCAN: {report.status}")
+        print(f"Songs: {summary['song_count']}")
+        print(f"Main references: {summary['main_references']}")
+        print(f"Preview references: {summary['preview_references']}")
+        print(f"Success: {summary['success_count']}")
+        print(f"Failures: {summary['failure_count']}")
+        print(f"Warnings: {summary['warning_count']}")
+        print(f"Errors: {summary['error_count']}")
         if args.output is not None:
             print(f"Report: {args.output.resolve()}")
         else:
