@@ -7,6 +7,10 @@ class BinaryFormatError(ValueError):
     """Raised when a binary container cannot be parsed safely."""
 
 
+class UnsupportedFormatError(BinaryFormatError):
+    """Raised when valid-looking input uses a structure we do not support."""
+
+
 def require_range(data: bytes | memoryview, offset: int, size: int, label: str) -> None:
     if offset < 0 or size < 0 or offset + size > len(data):
         raise BinaryFormatError(
@@ -47,4 +51,3 @@ def u64le(data: bytes | memoryview, offset: int, label: str) -> int:
 
 def align(value: int, boundary: int = 0x40) -> int:
     return (value + boundary - 1) & ~(boundary - 1)
-

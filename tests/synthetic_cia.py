@@ -66,3 +66,16 @@ def make_synthetic_cia(
     image[content_offset : content_offset + content_size] = content_blob
     return bytes(image)
 
+
+def make_synthetic_ncch() -> bytes:
+    media_unit = 0x200
+    payload = bytearray(media_unit * 3)
+    payload[0x100:0x104] = b"NCCH"
+    struct.pack_into("<I", payload, 0x104, 3)
+    struct.pack_into("<Q", payload, 0x108, 0x1122334455667788)
+    struct.pack_into("<Q", payload, 0x118, 0x0004000000000001)
+    payload[0x150:0x160] = b"CTR-P-SYNTH\0\0\0\0\0"
+    payload[0x18F] = 0x04  # NoCrypto; content-unit exponent remains zero.
+    struct.pack_into("<II", payload, 0x1B0, 1, 1)
+    payload[media_unit : media_unit + 4] = b"IVFC"
+    return bytes(payload)

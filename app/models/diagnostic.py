@@ -15,6 +15,7 @@ class DiagnosticReport:
     source_size: int
     cia: dict[str, Any]
     profile: dict[str, Any]
+    song_catalog: dict[str, Any] = field(default_factory=dict)
     issues: list[ValidationIssue] = field(default_factory=list)
     schema_version: int = 1
     generated_at: str = field(
@@ -39,6 +40,11 @@ class DiagnosticReport:
             },
             "profile": self.profile,
             "cia": self.cia,
+            "song_catalog": self.song_catalog,
+            "summary": {
+                "detected_song_count": self.song_catalog.get("song_count", 0),
+                "error_count": sum(i.severity == "ERROR" for i in self.issues),
+                "warning_count": sum(i.severity == "WARNING" for i in self.issues),
+            },
             "issues": [issue.to_dict() for issue in self.issues],
         }
-

@@ -7,6 +7,7 @@ from typing import Any
 
 from app.core.binary import (
     BinaryFormatError,
+    UnsupportedFormatError,
     align,
     require_range,
     u16be,
@@ -61,6 +62,7 @@ class TmdContentRecord:
     selected: bool
     file_offset: int | None = None
     actual_sha256: str | None = None
+    ncch: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -72,6 +74,7 @@ class TmdContentRecord:
             "selected_in_cia": self.selected,
             "file_offset": self.file_offset,
             "actual_sha256": self.actual_sha256,
+            "ncch": self.ncch,
         }
 
 
@@ -107,7 +110,7 @@ def _signature_body_offset(data: memoryview, offset: int, label: str) -> int:
     try:
         return offset + SIGNATURE_BLOCK_SIZES[signature_type]
     except KeyError as exc:
-        raise BinaryFormatError(
+        raise UnsupportedFormatError(
             f"unsupported {label} signature type: 0x{signature_type:08X}"
         ) from exc
 
@@ -117,6 +120,68 @@ def _is_content_selected(header: memoryview, index: int) -> bool:
         return False
     byte_value = header[CONTENT_INDEX_OFFSET + index // 8]
     return bool(byte_value & (0x80 >> (index % 8)))
+
+
+def _read_ncch(
+    data: memoryview, file_offset: int, content_size: int, content_type: int
+) -> dict[str, Any]:
+    if content_type & 0x0001:
+        return {"status": "cia_encrypted_not_inspected"}
+    if content_size < 0x200 or bytes(data[file_offset + 0x100 : file_offset + 0x104]) != b"NCCH":
+        return {"status": "not_ncch"}
+
+    flags = bytes(data[file_offset + 0x188 : file_offset + 0x190])
+    media_unit = 0x200 << flags[6]
+    declared_size = u32le(data, file_offset + 0x104, "NCCH content size") * media_unit
+    if declared_size > content_size:
+        raise BinaryFormatError(
+            f"NCCH declared size 0x{declared_size:X} exceeds TMD content size 0x{content_size:X}"
+        )
+
+    def region(name: str, offset_field: int, size_field: int) -> tuple[int, int]:
+        relative = u32le(data, file_offset + offset_field, f"NCCH {name} offset") * media_unit
+        size = u32le(data, file_offset + size_field, f"NCCH {name} size") * media_unit
+        if size and (relative < 0x200 or relative + size > content_size):
+            raise BinaryFormatError(
+                f"NCCH {name} region is outside its TMD content: "
+                f"offset=0x{relative:X}, size=0x{size:X}"
+            )
+        return relative, size
+
+    exefs_offset, exefs_size = region("ExeFS", 0x1A0, 0x1A4)
+    romfs_offset, romfs_size = region("RomFS", 0x1B0, 0x1B4)
+    no_crypto = bool(flags[7] & 0x04)
+    romfs_status = "not_present"
+    romfs_magic: str | None = None
+    if romfs_size:
+        if not no_crypto:
+            romfs_status = "ncch_encrypted_not_inspected"
+        else:
+            romfs_magic_bytes = bytes(data[file_offset + romfs_offset : file_offset + romfs_offset + 4])
+            romfs_magic = romfs_magic_bytes.hex()
+            romfs_status = "ivfc_detected" if romfs_magic_bytes == b"IVFC" else "unsupported_magic"
+
+    product_raw = bytes(data[file_offset + 0x150 : file_offset + 0x160]).split(b"\0", 1)[0]
+    try:
+        product_code = product_raw.decode("ascii", errors="strict")
+    except UnicodeDecodeError as exc:
+        raise BinaryFormatError("NCCH product code is not ASCII") from exc
+    return {
+        "status": "parsed",
+        "partition_id": f"{u64le(data, file_offset + 0x108, 'NCCH partition ID'):016x}",
+        "program_id": f"{u64le(data, file_offset + 0x118, 'NCCH program ID'):016x}",
+        "product_code": product_code,
+        "declared_size": declared_size,
+        "media_unit": media_unit,
+        "no_crypto": no_crypto,
+        "exefs": {"offset": exefs_offset, "size": exefs_size},
+        "romfs": {
+            "offset": romfs_offset,
+            "size": romfs_size,
+            "status": romfs_status,
+            "magic": romfs_magic,
+        },
+    }
 
 
 def read_cia(path: Path) -> CiaImage:
@@ -197,6 +262,7 @@ def read_cia(path: Path) -> CiaImage:
     for raw in parsed:
         file_offset: int | None = None
         actual_hash: str | None = None
+        ncch: dict[str, Any] | None = None
         if raw["selected"]:
             # CIA content is stored in TMD-record order. Padding between records is
             # included in the declared content section; the first record starts at
@@ -207,6 +273,7 @@ def read_cia(path: Path) -> CiaImage:
                     f"content index {raw['index']} exceeds declared content section"
                 )
             actual_hash = hashlib.sha256(data[cursor : cursor + raw["size"]]).hexdigest()
+            ncch = _read_ncch(data, cursor, raw["size"], raw["content_type"])
             cursor = align(cursor + raw["size"])
         records.append(
             TmdContentRecord(
@@ -218,6 +285,7 @@ def read_cia(path: Path) -> CiaImage:
                 selected=raw["selected"],
                 file_offset=file_offset,
                 actual_sha256=actual_hash,
+                ncch=ncch,
             )
         )
 
@@ -233,4 +301,3 @@ def read_cia(path: Path) -> CiaImage:
         sections=tuple(sections),
         contents=tuple(records),
     )
-

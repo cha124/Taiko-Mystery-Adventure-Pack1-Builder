@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import struct
 
 from app.core.binary import BinaryFormatError
 
@@ -45,3 +46,35 @@ def read_bounded_c_string(
         ) from exc
     return BoundedCString(pointer, raw, encoding)
 
+
+def read_pointer_c_string(
+    data: bytes,
+    pointer_offset: int,
+    *,
+    pointer_base: int = 0,
+    byteorder: str = "little",
+    lower_bound: int = 0,
+    upper_bound: int | None = None,
+    encoding: str = "utf-8",
+    required: bool = True,
+) -> BoundedCString:
+    """Resolve an actual 32-bit pointer and then read its bounded string target."""
+    if pointer_offset < 0 or pointer_offset + 4 > len(data):
+        raise BinaryFormatError(f"SongInfo pointer field 0x{pointer_offset:X} is outside the file")
+    if byteorder not in {"little", "big"}:
+        raise ValueError("byteorder must be 'little' or 'big'")
+    fmt = "<I" if byteorder == "little" else ">I"
+    relative = struct.unpack_from(fmt, data, pointer_offset)[0]
+    pointer = pointer_base + relative
+    value = read_bounded_c_string(
+        data,
+        pointer,
+        lower_bound=lower_bound,
+        upper_bound=upper_bound,
+        encoding=encoding,
+    )
+    if required and not value.raw:
+        raise BinaryFormatError(
+            f"required SongInfo string referenced at 0x{pointer_offset:X} is empty"
+        )
+    return value
