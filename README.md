@@ -2,7 +2,7 @@
 
 ユーザー所有の「太鼓の達人 ドコドン！ミステリーアドベンチャー」日本版DLC Pack1を、安全に診断し、将来カスタム曲へ置換するためのWindows向けプロジェクトです。
 
-現在の実装範囲はMilestone 0～2.6です。**CIA・RomFS・SongInfoを書き換える機能はなく、完全に読み取り専用です。** 音声変換、NAAC生成、tja2fumen接続、slot allocator、GUI、EXE化も未実装です。
+現在の実装範囲はMilestone 0～3です。**CIA・RomFS・SongInfo・NAACを書き換える機能はなく、完全に読み取り専用です。** 音声変換、NAAC生成、tja2fumen接続、slot allocator、GUI、EXE化も未実装です。
 
 ## 実装済み
 
@@ -19,6 +19,8 @@
 - 入力CIAのSHA-256と原子的JSON診断レポート
 - 1回の読込で固定するimmutable `SourceSnapshot`と、read/write compatibilityの独立した安全ゲート
 - TJAの構文妥当性とターゲット変換可能性を分離したconversion gate
+- strict ADTS frame parserと、連続frame検証によるNAAC payload境界検出
+- Pack1 main/preview全参照のread-only audio scan、実測bitrate、header相関、seek-like候補のレポート
 
 Pack1固有の構造は、記録済みSHA-256のユーザー所有CIAから読み取り専用で認定しています。content index 69のSongInfo/chart key不一致は、値が完全一致するときだけ`KNOWN_BASELINE_ANOMALY`としてWARNINGに分類し、情報を保持したまま置換不可にします。少しでも値が異なれば通常のERRORです。
 
@@ -56,6 +58,16 @@ CIAは最初の1回だけ`bytes`へ読み込み、そのSnapshotから全解析�
 
 TJA終了コードは、構文VALIDかつ変換可能で警告なしが`0`、構文VALIDだが変換BLOCKEDまたは警告ありが`1`、構文INVALIDが`2`、ファイル・decode・runtime errorが`3`です。
 
+## Audio診断
+
+```powershell
+.\.venv\Scripts\python.exe -m app.main audio-scan "path\to\Pack1.cia" --output "work\audio_scan.json"
+```
+
+catalogのmain/preview参照を全数走査し、NAAC payload offset、ADTS format、全frame統計、実測平均bitrate、header field相関、seek-like候補をJSONへ記録します。入力CIA、NAAC、AACは一切変更しません。既存Pack1の観測結果は[`docs/audio_readonly_analysis.md`](docs/audio_readonly_analysis.md)を参照してください。
+
+終了コードはPASSが`0`、観測上のvariationや既知Pack1 anomalyによるWARNINGが`1`、音声解析ERRORが`2`、入力・runtime errorが`3`です。`--include-source-path`を指定しない限り、JSONへ絶対パスを含めません。
+
 ## テスト
 
 実ゲームデータや実楽曲は使用せず、合成CIA/NCCH、合成SongInfo、短い自作TJAだけを使用します。
@@ -69,6 +81,7 @@ TJA終了コードは、構文VALIDかつ変換可能で警告なしが`0`、構
 ```powershell
 $env:TAIKO_PACK1_TEST_CIA = "C:\path\to\Pack1.cia"
 .\.venv\Scripts\python.exe -m pytest tests\integration\test_real_pack1.py
+.\.venv\Scripts\python.exe -m pytest tests\integration\test_real_pack1_audio.py
 ```
 
 ## 安全上の制約
@@ -81,4 +94,4 @@ $env:TAIKO_PACK1_TEST_CIA = "C:\path\to\Pack1.cia"
 - 静的PASSを3DS実機互換性の保証として表示しません。
 - 秘密鍵の取得・配布機能はありません。
 
-次工程では読み取り専用の音声仕様調査へ進めます。現時点では曲置換、音声生成、slot allocator本実装、RomFS/CIA書換え、再パックへ進めません。
+既存Pack1の全音声は読み取り可能になりましたが、MPEG ID 1のNAAC header規則、delay/padding、seek-like配列の意味は未解決です。判定は`MORE_AUDIO_RESEARCH_REQUIRED`であり、現時点では曲置換、音声生成、slot allocator本実装、RomFS/CIA書換え、再パックへ進めません。

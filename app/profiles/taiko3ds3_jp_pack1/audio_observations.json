@@ -1,0 +1,153 @@
+{
+  "schema_version": 1,
+  "status": "observed_from_base",
+  "read_only": true,
+  "encoding_approved": false,
+  "device_tested": false,
+  "source": {
+    "sha256": "655942fd605efc326ad1d8e7913af8c1b552e3a30548eb7d6c0233333d9373b7",
+    "song_slots": 77,
+    "main_references": 77,
+    "preview_references": 77,
+    "unique_naac_files": 154
+  },
+  "naac": {
+    "successful_files": 154,
+    "failed_files": 0,
+    "observed_header_size_distribution": {
+      "4096": 154
+    },
+    "observed_payload_offset_distribution": {
+      "4096": 154
+    },
+    "wording_constraint": "Observed in all verified Pack1 samples; not asserted as a universal NAAC requirement."
+  },
+  "adts": {
+    "main": {
+      "sample_rates_hz": {
+        "32000": 77
+      },
+      "channels": {
+        "2": 77
+      },
+      "profiles": {
+        "profile=1,AOT=2,AAC-LC": 77
+      },
+      "mpeg_ids": {
+        "0": 37,
+        "1": 40
+      },
+      "crc_usage": {
+        "none": 77
+      },
+      "frame_count_range": {
+        "minimum": 2264,
+        "maximum": 5056
+      },
+      "duration_seconds_range": {
+        "minimum": 72.448,
+        "maximum": 161.792
+      },
+      "measured_bitrate_bps_range": {
+        "minimum": 92265.96476740985,
+        "maximum": 119930.49363057324
+      }
+    },
+    "preview": {
+      "sample_rates_hz": {
+        "32000": 77
+      },
+      "channels": {
+        "2": 77
+      },
+      "profiles": {
+        "profile=1,AOT=2,AAC-LC": 77
+      },
+      "mpeg_ids": {
+        "0": 30,
+        "1": 47
+      },
+      "crc_usage": {
+        "none": 77
+      },
+      "frame_count_range": {
+        "minimum": 469,
+        "maximum": 469
+      },
+      "duration_seconds_range": {
+        "minimum": 15.008,
+        "maximum": 15.008
+      },
+      "measured_bitrate_bps_range": {
+        "minimum": 64417.9104477612,
+        "maximum": 119542.64392324095
+      }
+    }
+  },
+  "header_analysis": {
+    "common_byte_positions": {
+      "all": 1085,
+      "main": 1091,
+      "preview": 2033,
+      "compared_header_size": 4096
+    },
+    "role_specific_constant_byte_offsets": [
+      24,
+      25,
+      26,
+      34
+    ],
+    "strong_correlations": [
+      {
+        "scope": "mpeg_id_0",
+        "offset": 16,
+        "offset_hex": "0x10",
+        "width": 4,
+        "endianness": "little",
+        "candidate_meaning": "decoded_nominal_samples",
+        "matches": 67,
+        "total": 67
+      },
+      {
+        "scope": "mpeg_id_0",
+        "offset": 36,
+        "offset_hex": "0x24",
+        "width": 4,
+        "endianness": "little",
+        "candidate_meaning": "payload_size",
+        "matches": 67,
+        "total": 67
+      }
+    ],
+    "sample_count": "UNKNOWN_OUTSIDE_CORRELATED_COHORT",
+    "encoder_delay": "UNKNOWN",
+    "padding": "UNKNOWN"
+  },
+  "seek_like_array": {
+    "confirmed": false,
+    "confidence": "STRONGLY_CORRELATED",
+    "candidate_files": 67,
+    "inspected_files": 154,
+    "mpeg_id_0_candidates": 67,
+    "mpeg_id_1_candidates": 0,
+    "offset": 48,
+    "offset_hex": "0x30",
+    "entry_width": 4,
+    "endianness": "little",
+    "base": "payload_relative",
+    "entry_count_range": {
+      "minimum": 469,
+      "maximum": 1012
+    },
+    "frame_interval_distribution": {
+      "1": 30,
+      "2": 4,
+      "3": 27,
+      "4": 6
+    },
+    "frame_boundary_match_ratio": 1.0,
+    "semantic_status": "UNKNOWN"
+  },
+  "write_compatibility": "BLOCKED",
+  "next_milestone_decision": "MORE_AUDIO_RESEARCH_REQUIRED"
+}
