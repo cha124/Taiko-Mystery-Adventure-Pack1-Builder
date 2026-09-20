@@ -67,9 +67,9 @@ index 1～77の各contentから、content index/ID、内部ID、SongInfo、Music
 
 ## 確認された参照不整合
 
-content index 69（content ID `516810f8`）では、SongInfoの譜面keyが`akb437`なのに対し、実際の譜面directoryと他の内部参照は`akb347`だった。これはparserの推測補正対象にせず、`PACK1_CHART_KEY_MISMATCH`としてERRORを維持する。
+content index 69（content ID `516810f8`）では、SongInfoの譜面keyが`akb437`なのに対し、実際の譜面directoryと他の内部参照は`akb347`だった。これはparserの推測補正対象にしない。profileのcontent index・code・両keyへ完全一致する場合のみ、元情報を保持した`PACK1_CHART_KEY_MISMATCH` / `KNOWN_BASELINE_ANOMALY` WARNINGとして分類する。別の値なら通常ERRORである。
 
-このため、対象SHA-256は読み取り診断用fingerprintとして`SUPPORTED`だが、参照検査全体は`FAIL`になる。`SUPPORTED`は書換え可能・実機互換・安全な置換枠という意味ではない。
+対象SHA-256はread fingerprintで`SUPPORTED`、参照検査は`WARNING`になる。content 69はprotectedかつreplacement不許可である。write compatibilityは常に`BLOCKED`であり、readの`SUPPORTED`は書換え可能・実機互換・安全な置換枠という意味ではない。
 
 ## Fingerprint
 
@@ -79,6 +79,8 @@ Pack1判定ではSHA-256だけに依存せず、Title ID、content count、index
 - `COMPATIBLE_BUT_UNVERIFIED`: 構造は一致するがSHA-256は未登録
 - `UNSUPPORTED`: Title ID、content構成または主要構造が不一致
 - `CORRUPT`: 安全に構造を読めない
+
+入力CIAは1回だけimmutable Snapshotへ読み込み、上記fingerprint、SHA-256、RomFS、SongInfo/MusicInfoの全解析で共有する。診断JSON schema version 2ではread/write compatibilityを分離し、絶対パスは明示的なopt-in時だけ記録する。
 
 ## 未解明事項
 
@@ -91,4 +93,4 @@ Pack1判定ではSHA-256だけに依存せず、Title ID、content count、index
 
 ## 次Milestoneで使用可能な情報
 
-読取専用のCIA/NCCH/RomFS境界、77枠の安定identity、SongInfo→MusicInfo→audioとSongInfo→chartの参照検査は、slot allocatorの入力モデルと追加調査の土台にできる。一方、既知の参照ERRORと未実機検証があるため、まだ音声生成、曲置換、RomFS/CIA書換え、再パックへは進めない。
+読取専用のCIA/NCCH/RomFS境界、77枠の安定identity、SongInfo→MusicInfo→audioとSongInfo→chartの参照検査は、追加の読み取り専用調査の土台にできる。一方、既知baseline anomalyと未実機検証があるため、まだ音声生成、slot allocator本実装、曲置換、RomFS/CIA書換え、再パックへは進めない。IVFC writerの前にはhash tree完全性検証も必要である。
