@@ -18,6 +18,7 @@ from app.core.binary import (
     u64le,
 )
 from app.core.romfs_reader import read_romfs
+from app.core.source_snapshot import SourceSnapshot
 
 CIA_MIN_HEADER_SIZE = 0x2020
 CONTENT_INDEX_OFFSET = 0x20
@@ -81,7 +82,7 @@ class TmdContentRecord:
 
 @dataclass(frozen=True)
 class CiaImage:
-    path: Path
+    snapshot: SourceSnapshot
     file_size: int
     header_size: int
     cia_type: int
@@ -91,6 +92,11 @@ class CiaImage:
     tmd_content_count: int
     sections: tuple[CiaSection, ...]
     contents: tuple[TmdContentRecord, ...]
+
+    @property
+    def path(self) -> Path:
+        """Compatibility accessor; parsers must read through ``snapshot``."""
+        return self.snapshot.path
 
     def to_dict(self) -> dict[str, Any]:
         romfs_files: list[dict[str, Any]] = []
@@ -208,10 +214,8 @@ def _read_ncch(
     }
 
 
-def read_cia(path: Path) -> CiaImage:
-    path = path.resolve()
-    data_bytes = path.read_bytes()
-    data = memoryview(data_bytes)
+def read_cia_snapshot(snapshot: SourceSnapshot) -> CiaImage:
+    data = snapshot.view()
     require_range(data, 0, CIA_MIN_HEADER_SIZE, "CIA header")
 
     header_size = u32le(data, 0x00, "CIA header size")
@@ -314,7 +318,7 @@ def read_cia(path: Path) -> CiaImage:
         )
 
     return CiaImage(
-        path=path,
+        snapshot=snapshot,
         file_size=len(data),
         header_size=header_size,
         cia_type=cia_type,
@@ -325,3 +329,8 @@ def read_cia(path: Path) -> CiaImage:
         sections=tuple(sections),
         contents=tuple(records),
     )
+
+
+def read_cia(path: Path) -> CiaImage:
+    """Compatibility wrapper for callers that do not already own a snapshot."""
+    return read_cia_snapshot(SourceSnapshot.from_path(path))

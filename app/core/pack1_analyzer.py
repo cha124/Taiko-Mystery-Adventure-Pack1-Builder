@@ -2,13 +2,12 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Any
 
 from app.core.binary import BinaryFormatError
 from app.core.cia_reader import CiaImage
 from app.core.songinfo.parser import parse_pack1_musicinfo, parse_pack1_songinfo
-from app.models.fingerprint import Compatibility, Pack1Fingerprint
+from app.models.fingerprint import Compatibility, Pack1Fingerprint, Pack1WriteFingerprint
 from app.models.validation import ValidationIssue
 
 SONGINFO_PATH = "/_data/system/SongInfo.dat"
@@ -66,27 +65,55 @@ class Pack1Analysis:
 
     @property
     def reference_validation(self) -> dict[str, Any]:
-        errors = [issue.to_dict() for issue in self.issues if issue.severity == "ERROR"]
-        warnings = [issue.to_dict() for issue in self.issues if issue.severity == "WARNING"]
-        return {
-            "status": "PASS" if not errors else "FAIL",
-            "checked_song_slots": len(self.slots),
-            "errors": errors,
-            "warnings": warnings,
-        }
+        return build_reference_validation(self.slots, self.issues)
 
 
-def _read_exact(path: Path, offset: int, size: int) -> bytes:
-    if offset < 0 or size < 0:
-        raise BinaryFormatError("negative file range")
-    with path.open("rb") as stream:
-        stream.seek(offset)
-        data = stream.read(size)
-    if len(data) != size:
-        raise BinaryFormatError(
-            f"short read at 0x{offset:X}: expected {size}, received {len(data)}"
+def build_reference_validation(
+    slots: tuple[Pack1SongSlot, ...], issues: tuple[ValidationIssue, ...]
+) -> dict[str, Any]:
+    errors = [issue.to_dict() for issue in issues if issue.severity == "ERROR"]
+    warnings = [issue.to_dict() for issue in issues if issue.severity == "WARNING"]
+    status = "FAIL" if errors else "WARNING" if warnings else "PASS"
+    return {
+        "status": status,
+        "checked_song_slots": len(slots),
+        "errors": errors,
+        "warnings": warnings,
+    }
+
+
+def classify_baseline_anomalies(
+    issues: tuple[ValidationIssue, ...], profile: dict[str, Any]
+) -> tuple[ValidationIssue, ...]:
+    known = profile.get("known_baseline_anomalies", [])
+    classified: list[ValidationIssue] = []
+    for issue in issues:
+        match = None
+        for anomaly in known:
+            expected = anomaly.get("expected", {})
+            if (
+                issue.code == anomaly.get("code")
+                and issue.location == f"content[{anomaly.get('content_index')}]"
+                and issue.details.get("content_index") == anomaly.get("content_index")
+                and issue.details.get("songinfo") == expected.get("songinfo_chart_key")
+                and issue.details.get("romfs_keys") == expected.get("romfs_chart_keys")
+            ):
+                match = anomaly
+                break
+        if match is None:
+            classified.append(issue)
+            continue
+        classified.append(
+            ValidationIssue(
+                code=issue.code,
+                severity="WARNING",
+                message=issue.message,
+                location=issue.location,
+                details=issue.details,
+                classification="KNOWN_BASELINE_ANOMALY",
+            )
         )
-    return data
+    return tuple(classified)
 
 
 def _romfs_files(content: Any) -> dict[str, dict[str, Any]]:
@@ -124,10 +151,10 @@ def analyze_pack1(image: CiaImage) -> Pack1Analysis:
             song_entry = files[SONGINFO_PATH.casefold()]
             music_entry = files[MUSICINFO_PATH.casefold()]
             songinfo = parse_pack1_songinfo(
-                _read_exact(image.path, song_entry["absolute_offset"], song_entry["size"])
+                image.snapshot.read(song_entry["absolute_offset"], song_entry["size"])
             )
             musicinfo = parse_pack1_musicinfo(
-                _read_exact(image.path, music_entry["absolute_offset"], music_entry["size"])
+                image.snapshot.read(music_entry["absolute_offset"], music_entry["size"])
             )
         except BinaryFormatError as exc:
             issues.append(
@@ -169,7 +196,11 @@ def analyze_pack1(image: CiaImage) -> Pack1Analysis:
                     "ERROR",
                     "SongInfo chart key does not identify the RomFS chart directory.",
                     location,
-                    {"songinfo": songinfo.chart_key, "romfs_keys": sorted(chart_keys)},
+                    {
+                        "content_index": content.index,
+                        "songinfo": songinfo.chart_key,
+                        "romfs_keys": sorted(chart_keys),
+                    },
                 )
             )
         if songinfo.music_info_key != musicinfo.music_info_key:
@@ -273,4 +304,14 @@ def fingerprint_pack1(
         compatibility = Compatibility.SUPPORTED
     else:
         compatibility = Compatibility.COMPATIBLE_BUT_UNVERIFIED
-    return Pack1Fingerprint(compatibility, tuple(matched), tuple(failed))
+    write_checks = tuple(
+        check
+        for check in matched
+        if check in Pack1WriteFingerprint().required_checks
+    )
+    return Pack1Fingerprint(
+        compatibility,
+        tuple(matched),
+        tuple(failed),
+        Pack1WriteFingerprint(satisfied_checks=write_checks),
+    )
