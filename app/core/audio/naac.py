@@ -144,4 +144,7 @@ def inspect_naac(data: bytes | memoryview) -> NAACInspection:
         adts=stream.statistics,
         seek_candidates=_seek_candidates(header, payload_offset, frame_offsets),
         issues=tuple(issues),
+        frame_offsets=frame_offsets,
+        frame_end_offsets=tuple(frame.end_offset for frame in stream.frames),
+        frame_payload_lengths=tuple(frame.payload_length for frame in stream.frames),
     )

@@ -56,3 +56,36 @@ def test_diagnose_cli_reports_corrupt_container_as_exit_two(tmp_path: Path, caps
     assert "CIA DIAGNOSTIC: FAIL" in console
     assert "Title ID: (unavailable)" in console
     assert output.exists()
+
+
+def test_audio_forensics_cli_reports_research_decision(tmp_path: Path, monkeypatch, capsys) -> None:
+    source = tmp_path / "source.cia"
+    source.write_bytes(b"placeholder")
+    output = tmp_path / "forensics.json"
+    monkeypatch.setattr(
+        "app.main.run_audio_forensics",
+        lambda *args, **kwargs: {
+            "decision": "MORE_AUDIO_RESEARCH_REQUIRED",
+            "safety": {"audio_scan_status": "WARNING"},
+            "cohorts": {"all": {"file_count": 154}},
+            "mpeg_id_1": {
+                "decoded_nominal_samples_candidate": {"status": "NOT_FOUND"},
+                "payload_size_candidate": {"status": "NOT_FOUND"},
+            },
+        },
+    )
+    assert main(["audio-forensics", str(source), "--output", str(output)]) == 1
+    console = capsys.readouterr().out
+    assert "AUDIO FORENSICS: WARNING" in console
+    assert "MPEG1 decoded nominal samples candidate: NOT_FOUND" in console
+    assert "MPEG1 payload size candidate: NOT_FOUND" in console
+
+
+def test_audio_forensics_cli_cannot_overwrite_source(tmp_path: Path, capsys) -> None:
+    source = tmp_path / "source.cia"
+    original = b"not-a-real-cia"
+    source.write_bytes(original)
+
+    assert main(["audio-forensics", str(source), "--output", str(source)]) == 3
+    assert source.read_bytes() == original
+    assert "audio forensics failed" in capsys.readouterr().err
