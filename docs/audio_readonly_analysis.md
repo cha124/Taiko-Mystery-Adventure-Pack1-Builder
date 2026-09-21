@@ -79,7 +79,7 @@ ADTS profileはAudio Object Typeそのものではない。観測値`profile=1`�
 
 seek tableとして`CONFIRMED`されたものはない。
 
-MPEG ID 0の67/67件では、0x30から始まる4-byte little-endian、payload-relativeの単調増加配列がADTS frame startと100%一致した。MPEG ID 1の87件では同じ候補を検出しなかった。候補entry countは469～1012、frame intervalは1が30件、2が4件、3が27件、4が6件だった。
+従来の手動観測では、MPEG ID 0の67/67件に0x30から始まる4-byte little-endian、payload-relativeの単調増加配列があり、ADTS frame startと100%一致した。MPEG ID 1の87件では同じ候補を検出しなかった。候補entry countは469～1012、frame intervalは1が30件、2が4件、3が27件、4が6件だった。これは既知の観測値であり、新Forensics engineの初回private実行結果をregression expectationとして固定したものではない。
 
 この配列はframe boundaryとの`STRONGLY_CORRELATED`なseek-like candidateである。ただし実際のseek動作を検証していないため、`seek_table = confirmed`とはしない。
 
@@ -124,9 +124,9 @@ Milestone 3.5では、既存のread-only parserを維持したまま、Audio Sca
 - Audio reportの`distinct_reference_count`は`(content_index, romfs_path)`のunique数、`distinct_content_hash_count`は非空NAAC SHA-256のunique数であり、互いに別の値として出力する。既存の`unique_naac_count`は互換性のため残している。
 - Forensics CLIは`python -m app.main audio-forensics "<Pack1.cia>" --output "work\\audio_forensics.json"`で実行する。SourceSnapshotを一度だけCIA parserへ渡し、Audio Scanで成功したNAAC recordをメモリ上でForensicsへ引き継ぐ。出力はatomic writeで、CIA、NAAC payload、4096-byte header full dump、frame payloadは保存しない。
 - cohortは`all`、`main`、`preview`、`mpeg_id_0`、`mpeg_id_1`と4つのrole/MPEG組み合わせに固定した。Field Candidateは指定された8 target、2/4/8-byte、little/big endian、identity/divide-by-256/divide-by-1024だけを探索する。`STRONGLY_CORRELATED`はmatch ratio 1.0、cohort 5 files以上、target distinct values 3以上の全条件を満たす場合だけで、`CONFIRMED`は自動生成しない。
-- 0x30の検証は`capacity = (header_size - 0x30) // 4`、`predicted_stride = ceil(frame_count / capacity)`を用い、stride 1～16の`frame_offsets[::stride]`だけを比較する。完全一致しても表示名は`FRAME_OFFSET_ARRAY_STRONGLY_CORRELATED`に留め、seek semanticsは`UNKNOWN`とする。0x2Cの48と0x30の一致は`TABLE_OFFSET_POINTER_CANDIDATE`として別扱いにする。
+- 0x30の検証は`capacity = (header_size - 0x30) // 4`、`predicted_stride = ceil(frame_count / capacity)`を用い、stride 1～16の`frame_offsets[::stride]`だけを比較する。`exact_prefix_match`は比較対象entryの一致だけ、`predicted_stride_match`は観測strideと予測strideの一致だけを表す。`generation_rule_match`はその両方であり、cohortのStrong labelは5 files以上の全fileがgeneration ruleに一致した場合だけ`FRAME_OFFSET_GENERATION_RULE_STRONGLY_CORRELATED`とする。tailのzero状態は別のObserved値として保持し、seek semanticsは`UNKNOWN`とする。0x2Cの48と0x30の一致は`TABLE_OFFSET_POINTER_CANDIDATE`として別扱いにする。
 - ADTSはframe間のMPEG ID変更を`ADTS_FORMAT_CHANGED`で拒否する。CRC presentと複数raw data blockの組み合わせは未対応なので`ADTS_CRC_MULTIBLOCK_UNSUPPORTED`で明示的に拒否する。
 
-この作業環境では`TAIKO_PACK1_TEST_CIA`が未設定だったため、Milestone 3.5の新しいForensics JSONを実CIAから再生成していない。したがって`audio_observations.json`は既存の実Pack1観測値を保持し、`audio_profiles.json`、`device_tested`、`generation_approved`、`write_compatibility`も変更していない。実CIAを指定したprivate integration testでは、上記のcohort集計とMPEG ID 1候補の`NOT_FOUND`判定を再検証する。
+この作業環境では`TAIKO_PACK1_TEST_CIA`が未設定だったため、Milestone 3.5の新しいForensics JSONを実CIAから再生成していない。したがって`audio_observations.json`は既存の実Pack1観測値を保持し、`audio_profiles.json`、`device_tested`、`generation_approved`、`write_compatibility`も変更していない。private integration testは既知のPack1構造事実を固定し、新Forensics結果はschema・型・範囲・候補statusだけを検証する。MPEG ID 1 candidateが`FOUND`になっても、研究上の新発見候補として扱い、test failureにはしない。
 
 現時点のcompletion decisionは`MORE_AUDIO_RESEARCH_REQUIRED`である。MPEG ID 1のsample/size metadata規則、全cohortの0x30配列生成規則、encoder delay/padding/playable samplesが未確定であり、音声生成やNAAC writerへ進む条件を満たしていない。
