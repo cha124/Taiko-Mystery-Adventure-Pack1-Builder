@@ -4,7 +4,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from app.core.audio.analyzer import run_audio_scan
+from app.core.audio.analyzer import run_audio_forensics, run_audio_scan
 from app.core.job_runner import run_diagnostic
 from app.core.tja import check_tja_file
 from app.core.tja.decoder import TjaDecodeError
@@ -40,6 +40,22 @@ def _parser() -> argparse.ArgumentParser:
         help="include the absolute source path in JSON output (off by default)",
     )
     audio_scan.add_argument(
+        "--profile",
+        default="taiko3ds3_jp_pack1",
+        help="profile directory name (default: %(default)s)",
+    )
+    audio_forensics = subparsers.add_parser(
+        "audio-forensics",
+        help="compare read-only NAAC header cohorts without modifying the CIA",
+    )
+    audio_forensics.add_argument("source", type=Path, help="path to the source CIA")
+    audio_forensics.add_argument("--output", type=Path, help="atomic JSON report destination")
+    audio_forensics.add_argument(
+        "--include-source-path",
+        action="store_true",
+        help="include the absolute source path in JSON output (off by default)",
+    )
+    audio_forensics.add_argument(
         "--profile",
         default="taiko3ds3_jp_pack1",
         help="profile directory name (default: %(default)s)",
@@ -108,6 +124,39 @@ def main(argv: list[str] | None = None) -> int:
         if report.status == "WARNING":
             return 1
         return 2
+
+    if args.command == "audio-forensics":
+        try:
+            payload = run_audio_forensics(
+                args.source,
+                output=args.output,
+                include_source_path=args.include_source_path,
+                profile_name=args.profile,
+            )
+        except (OSError, ValueError) as exc:
+            print(f"audio forensics failed: {exc}", file=sys.stderr)
+            return 3
+        safety = payload["safety"]
+        print(f"AUDIO FORENSICS: {safety['audio_scan_status']}")
+        print(f"Decision: {payload['decision']}")
+        print(f"Successful NAAC files: {payload['cohorts']['all']['file_count']}")
+        print(
+            "MPEG1 decoded nominal samples candidate: "
+            f"{payload['mpeg_id_1']['decoded_nominal_samples_candidate']['status']}"
+        )
+        print(
+            "MPEG1 payload size candidate: "
+            f"{payload['mpeg_id_1']['payload_size_candidate']['status']}"
+        )
+        if args.output is not None:
+            print(f"Report: {args.output.resolve()}")
+        else:
+            print("JSON report not written (use --output with an explicit path).")
+        if safety["audio_scan_status"] == "FAIL":
+            return 2
+        if payload["decision"] != "READY_FOR_AUDIO_CANDIDATE_PROTOTYPE":
+            return 1
+        return 0
 
     if args.command == "tja-check":
         try:

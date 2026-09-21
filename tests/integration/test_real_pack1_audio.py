@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from app.core.audio.analyzer import run_audio_scan
+from app.core.audio.analyzer import run_audio_forensics, run_audio_scan
 
 
 def test_private_real_pack1_audio_scan() -> None:
@@ -28,6 +28,8 @@ def test_private_real_pack1_audio_scan() -> None:
     assert summary["main_references"] == 77
     assert summary["preview_references"] == 77
     assert summary["unique_naac_count"] == 154
+    assert summary["distinct_reference_count"] == 154
+    assert summary["distinct_content_hash_count"] == 154
     assert summary["success_count"] == 154
     assert summary["failure_count"] == 0
     assert summary["error_count"] == 0
@@ -47,3 +49,23 @@ def test_private_real_pack1_audio_scan() -> None:
     assert summary["preview"]["mpeg_id_distribution"] == {"0": 30, "1": 47}
     assert all(item["parse_status"] == "SUCCESS" for item in payload["files"])
     assert payload["header_analysis"]["seek_table_analysis"]["confirmed"] is False
+
+    forensics = run_audio_forensics(Path(configured))
+    assert forensics["source"]["sha256"] == (
+        "655942fd605efc326ad1d8e7913af8c1b552e3a30548eb7d6c0233333d9373b7"
+    )
+    assert forensics["read_only"] is True
+    assert forensics["device_tested"] is False
+    assert forensics["generation_approved"] is False
+    assert forensics["cohorts"]["all"]["file_count"] == 154
+    assert forensics["cohorts"]["main"]["file_count"] == 77
+    assert forensics["cohorts"]["preview"]["file_count"] == 77
+    assert forensics["cohorts"]["mpeg_id_0"]["file_count"] == 67
+    assert forensics["cohorts"]["mpeg_id_1"]["file_count"] == 87
+    assert forensics["frame_offset_table_hypothesis"]["cohort_summary"]["mpeg_id_0"][
+        "exact_matches_over_files"
+    ] == "67 / 67"
+    assert forensics["table_offset_pointer"]["matches"] == 154
+    assert forensics["mpeg_id_1"]["decoded_nominal_samples_candidate"]["status"] == "NOT_FOUND"
+    assert forensics["mpeg_id_1"]["payload_size_candidate"]["status"] == "NOT_FOUND"
+    assert forensics["decision"] == "MORE_AUDIO_RESEARCH_REQUIRED"
