@@ -114,3 +114,19 @@ playable sample count、encoder delay、末尾padding、およびそれらを区
 判定は`MORE_AUDIO_RESEARCH_REQUIRED`。
 
 既存154ファイルは完全に読み取れるが、安全なNAAC候補生成にはMPEG ID 1 header規則、delay/padding、seek-like配列の生成・消費規則が未解決である。`audio_profiles.json`は変更せず、production encoding profileおよびdevice-tested profileは追加していない。write compatibilityは引き続き`BLOCKED`である。
+
+## Milestone 3.5 実装メモ
+
+Milestone 3.5では、既存のread-only parserを維持したまま、Audio Scanの安全境界とNAAC header forensicsを追加した。
+
+- Pack1 analyzerのissueは`classify_baseline_anomalies()`で再分類してからAudioIssueへ移す。profileと完全一致するcontent 69の`PACK1_CHART_KEY_MISMATCH`だけが`KNOWN_BASELINE_ANOMALY` / `WARNING`になり、それ以外のPack1 issueは元の`ERROR`を維持する。
+- profileに`verified_observations.song_slot_count`がある場合はdetected slot数を検査する。verified SHA-256に対してはprofileのmain/preview reference countも検査する。失敗コードはそれぞれ`AUDIO_PACK1_SLOT_COUNT_MISMATCH`、`AUDIO_REFERENCE_COUNT_MISMATCH`である。
+- Audio reportの`distinct_reference_count`は`(content_index, romfs_path)`のunique数、`distinct_content_hash_count`は非空NAAC SHA-256のunique数であり、互いに別の値として出力する。既存の`unique_naac_count`は互換性のため残している。
+- Forensics CLIは`python -m app.main audio-forensics "<Pack1.cia>" --output "work\\audio_forensics.json"`で実行する。SourceSnapshotを一度だけCIA parserへ渡し、Audio Scanで成功したNAAC recordをメモリ上でForensicsへ引き継ぐ。出力はatomic writeで、CIA、NAAC payload、4096-byte header full dump、frame payloadは保存しない。
+- cohortは`all`、`main`、`preview`、`mpeg_id_0`、`mpeg_id_1`と4つのrole/MPEG組み合わせに固定した。Field Candidateは指定された8 target、2/4/8-byte、little/big endian、identity/divide-by-256/divide-by-1024だけを探索する。`STRONGLY_CORRELATED`はmatch ratio 1.0、cohort 5 files以上、target distinct values 3以上の全条件を満たす場合だけで、`CONFIRMED`は自動生成しない。
+- 0x30の検証は`capacity = (header_size - 0x30) // 4`、`predicted_stride = ceil(frame_count / capacity)`を用い、stride 1～16の`frame_offsets[::stride]`だけを比較する。完全一致しても表示名は`FRAME_OFFSET_ARRAY_STRONGLY_CORRELATED`に留め、seek semanticsは`UNKNOWN`とする。0x2Cの48と0x30の一致は`TABLE_OFFSET_POINTER_CANDIDATE`として別扱いにする。
+- ADTSはframe間のMPEG ID変更を`ADTS_FORMAT_CHANGED`で拒否する。CRC presentと複数raw data blockの組み合わせは未対応なので`ADTS_CRC_MULTIBLOCK_UNSUPPORTED`で明示的に拒否する。
+
+この作業環境では`TAIKO_PACK1_TEST_CIA`が未設定だったため、Milestone 3.5の新しいForensics JSONを実CIAから再生成していない。したがって`audio_observations.json`は既存の実Pack1観測値を保持し、`audio_profiles.json`、`device_tested`、`generation_approved`、`write_compatibility`も変更していない。実CIAを指定したprivate integration testでは、上記のcohort集計とMPEG ID 1候補の`NOT_FOUND`判定を再検証する。
+
+現時点のcompletion decisionは`MORE_AUDIO_RESEARCH_REQUIRED`である。MPEG ID 1のsample/size metadata規則、全cohortの0x30配列生成規則、encoder delay/padding/playable samplesが未確定であり、音声生成やNAAC writerへ進む条件を満たしていない。
