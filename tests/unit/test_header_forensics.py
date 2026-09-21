@@ -5,6 +5,8 @@ import json
 import struct
 from pathlib import Path
 
+import pytest
+
 from app.core.audio.analyzer import AudioScanReport
 from app.core.audio.header_forensics import (
     analyze_header_forensics,
@@ -23,6 +25,7 @@ def _record(
     mpeg_id: int = 0,
     role: str = "main",
     mpeg0_table: bool = True,
+    table_stride: int | None = None,
 ) -> AudioFileAnalysis:
     payload = make_adts_stream(frame_count, mpeg_id=mpeg_id)
     header = bytearray(128)
@@ -32,7 +35,8 @@ def _record(
     initial = inspect_naac(bytes(header) + payload)
     if mpeg0_table:
         capacity = max((len(header) - 0x30) // 4, 0)
-        for number, offset in enumerate(initial.frame_offsets[:capacity]):
+        stride = table_stride or 1
+        for number, offset in enumerate(initial.frame_offsets[::stride][:capacity]):
             struct.pack_into("<I", header, 0x30 + number * 4, offset)
     inspection = inspect_naac(bytes(header) + payload)
     return AudioFileAnalysis(
@@ -140,6 +144,28 @@ def test_frame_offset_table_prefix_can_match_with_wrong_predicted_stride() -> No
     assert result["generation_rule_match"] is False
 
 
+@pytest.mark.parametrize(
+    ("frame_count", "table_stride"),
+    [(21, 2), (41, 3), (61, 4)],
+)
+def test_frame_offset_table_normal_predicted_strides_are_generation_matches(
+    frame_count: int,
+    table_stride: int,
+) -> None:
+    result = frame_offset_table_hypothesis(
+        [_record(0, frame_count=frame_count, table_stride=table_stride)]
+    )["per_file"][0]
+
+    assert result["capacity"] == (128 - 0x30) // 4
+    assert result["predicted_stride"] == table_stride
+    assert result["observed_best_stride"] == table_stride
+    assert result["exact_prefix_match"] is True
+    assert result["predicted_stride_match"] is True
+    assert result["generation_rule_match"] is True
+    assert result["match_ratio"] == 1.0
+    assert result["entry_count"] <= result["capacity"]
+
+
 def test_frame_offset_table_tail_is_observed_separately_from_generation_rule() -> None:
     record = _with_nonzero_table_tail(_record(0, frame_count=3))
     result = frame_offset_table_hypothesis([record])["per_file"][0]
@@ -194,6 +220,22 @@ def test_frame_offset_table_zero_of_n_is_unknown() -> None:
     assert summary["generation_rule_matches"] == 0
     assert summary["exact_match_ratio"] == 0.0
     assert summary["confidence"] == "UNKNOWN"
+
+
+def test_frame_offset_table_five_normal_predicted_stride_matches_are_strong() -> None:
+    records = [
+        _record(index, frame_count=21 + index, table_stride=2)
+        for index in range(5)
+    ]
+
+    summary = frame_offset_table_hypothesis(records)["cohort_summary"]["main"]
+
+    assert summary["files"] == 5
+    assert summary["exact_prefix_matches"] == 5
+    assert summary["predicted_stride_matches"] == 5
+    assert summary["generation_rule_matches"] == 5
+    assert summary["generation_rule_match_ratio"] == 1.0
+    assert summary["confidence"] == "FRAME_OFFSET_GENERATION_RULE_STRONGLY_CORRELATED"
 
 
 def test_forensics_json_has_schema_and_no_full_header_dump(tmp_path: Path) -> None:
