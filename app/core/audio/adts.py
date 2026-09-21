@@ -69,6 +69,16 @@ def parse_adts_frame(data: bytes | memoryview, offset: int = 0) -> ADTSFrame:
     aac_frame_length = ((b3 & 0x03) << 11) | (b4 << 3) | (b5 >> 5)
     adts_buffer_fullness = ((b5 & 0x1F) << 6) | (b6 >> 2)
     number_of_raw_data_blocks = b6 & 0x03
+    if not protection_absent and number_of_raw_data_blocks > 0:
+        # The parser understands the fixed CRC-bearing header length, but it
+        # does not parse the per-raw-block CRC/check syntax.  Reject the
+        # ambiguous combination instead of presenting partial support as a
+        # safe parse.
+        raise ADTSParseError(
+            "ADTS_CRC_MULTIBLOCK_UNSUPPORTED",
+            "CRC-present ADTS frames with multiple raw data blocks are unsupported.",
+            offset,
+        )
     header_length = 7 if protection_absent else 9
     if available < header_length:
         raise ADTSParseError("ADTS_CRC_TRUNCATED", "ADTS CRC bytes are truncated.", offset)

@@ -110,6 +110,21 @@ def test_rejects_format_change_between_frames(changed: dict[str, int]) -> None:
     assert caught.value.code == "ADTS_FORMAT_CHANGED"
 
 
+def test_rejects_mpeg_id_change_between_frames() -> None:
+    data = make_adts_frame(mpeg_id=0) + make_adts_frame(mpeg_id=1)
+    with pytest.raises(ADTSParseError) as caught:
+        parse_adts_stream(data)
+    assert caught.value.code == "ADTS_FORMAT_CHANGED"
+
+
+def test_rejects_crc_with_multiple_raw_data_blocks() -> None:
+    with pytest.raises(ADTSParseError) as caught:
+        parse_adts_frame(
+            make_adts_frame(protection_absent=False, raw_data_blocks=1)
+        )
+    assert caught.value.code == "ADTS_CRC_MULTIBLOCK_UNSUPPORTED"
+
+
 def test_raw_data_blocks_drive_duration_and_measured_bitrate() -> None:
     data = make_adts_stream(2, raw_data_blocks=1)
     stats = parse_adts_stream(data).statistics

@@ -34,6 +34,8 @@
   "verified_observations": {
     "content_count": 78,
     "song_slot_count": 77,
+    "main_references": 77,
+    "preview_references": 77,
     "romfs_file_count": 1445,
     "all_contents_unencrypted_ncch": true,
     "all_contents_have_ivfc_romfs": true,

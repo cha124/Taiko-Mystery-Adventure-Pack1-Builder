@@ -10,14 +10,20 @@ from pathlib import Path
 from typing import Any
 
 from app.core.audio.naac import NAACParseError, inspect_naac
+from app.core.audio.header_forensics import analyze_header_forensics
 from app.core.audio.statistics import header_analysis, role_statistics
 from app.core.audio.validator import validate_collection
 from app.core.cia_reader import CiaImage, read_cia_snapshot
-from app.core.pack1_analyzer import analyze_pack1, fingerprint_pack1
+from app.core.pack1_analyzer import (
+    analyze_pack1,
+    classify_baseline_anomalies,
+    fingerprint_pack1,
+)
 from app.core.song_catalog import load_profile
 from app.core.source_snapshot import SourceSnapshot
 from app.models.audio import AudioFileAnalysis, AudioIssue, NAACInspection
 from app.models.fingerprint import ReadCompatibility
+from app.models.validation import ValidationIssue
 
 
 @dataclass(frozen=True)
@@ -60,11 +66,19 @@ class AudioScanReport:
             (record.content_index, record.romfs_path.casefold(), record.naac_sha256)
             for record in self.records
         }
+        distinct_references = {
+            (record.content_index, record.romfs_path.casefold()) for record in self.records
+        }
+        distinct_content_hashes = {
+            record.naac_sha256 for record in self.records if record.naac_sha256
+        }
         summary = {
             "song_count": self.song_count,
             "main_references": sum(record.role == "main" for record in self.records),
             "preview_references": sum(record.role == "preview" for record in self.records),
             "unique_naac_count": len(unique),
+            "distinct_reference_count": len(distinct_references),
+            "distinct_content_hash_count": len(distinct_content_hashes),
             "success_count": len(successful),
             "failure_count": len(self.records) - len(successful),
             "warning_count": sum(issue.severity == "WARNING" for issue in self.all_issues),
@@ -117,6 +131,39 @@ def _romfs_entries(image: CiaImage, content_index: int) -> dict[str, dict[str, A
         for entry in romfs.get("files", [])
         if isinstance(entry, dict) and "path" in entry
     }
+
+
+def _pack1_issue_to_audio_issue(issue: ValidationIssue) -> AudioIssue:
+    """Preserve Pack1 severity while moving its issue into the audio report."""
+
+    known_baseline = issue.classification == "KNOWN_BASELINE_ANOMALY"
+    return AudioIssue(
+        "PACK1_REFERENCE_ANOMALY" if known_baseline else "PACK1_REFERENCE_ERROR",
+        issue.severity if issue.severity in {"WARNING", "ERROR"} else "ERROR",
+        f"{issue.code}: {issue.message}",
+        details=dict(issue.details),
+        source_code=issue.code,
+        classification=issue.classification,
+    )
+
+
+def _verified_audio_expectations(
+    profile: dict[str, Any], source_sha256: str
+) -> tuple[int | None, dict[str, int]]:
+    """Return slot observations and verified-source-only reference observations."""
+
+    observations = profile.get("verified_observations", {})
+    expected_slots = observations.get("song_slot_count")
+    if source_sha256 not in profile.get("verified_sha256", []):
+        return (int(expected_slots) if expected_slots is not None else None), {}
+    expected_references: dict[str, int] = {}
+    for role in ("main", "preview"):
+        value = observations.get(f"{role}_references")
+        if value is None:
+            value = observations.get(f"{role}_reference_count")
+        if value is not None:
+            expected_references[role] = int(value)
+    return (int(expected_slots) if expected_slots is not None else None), expected_references
 
 
 def _write_json_atomic(path: Path, payload: dict[str, Any]) -> None:
@@ -228,14 +275,41 @@ def run_audio_scan(
                     )
                 )
     collection_issues = list(validate_collection(records))
-    if pack1.issues:
+    classified_pack1_issues = classify_baseline_anomalies(pack1.issues, profile)
+    collection_issues.extend(_pack1_issue_to_audio_issue(issue) for issue in classified_pack1_issues)
+
+    expected_slots, expected_references = _verified_audio_expectations(
+        profile, snapshot.sha256
+    )
+    if expected_slots is not None and len(pack1.slots) != expected_slots:
         collection_issues.append(
             AudioIssue(
-                "PACK1_REFERENCE_ANOMALIES_PRESENT",
-                "WARNING",
-                "Pack1 contains separately reported non-audio reference anomalies.",
+                "AUDIO_PACK1_SLOT_COUNT_MISMATCH",
+                "ERROR",
+                f"Detected {len(pack1.slots)} Pack1 song slots; expected {expected_slots}.",
+                details={"expected": expected_slots, "detected": len(pack1.slots)},
             )
         )
+    if expected_references:
+        detected_references = {
+            "main": sum(record.role == "main" for record in records),
+            "preview": sum(record.role == "preview" for record in records),
+        }
+        if any(
+            detected_references[role] != expected
+            for role, expected in expected_references.items()
+        ):
+            collection_issues.append(
+                AudioIssue(
+                    "AUDIO_REFERENCE_COUNT_MISMATCH",
+                    "ERROR",
+                    "Verified Pack1 audio reference counts do not match profile observations.",
+                    details={
+                        "expected": dict(expected_references),
+                        "detected": detected_references,
+                    },
+                )
+            )
     report = AudioScanReport(
         source=source,
         source_size=snapshot.size,
@@ -250,3 +324,31 @@ def run_audio_scan(
     if output is not None:
         _write_json_atomic(output, report.to_dict())
     return report
+
+
+def run_audio_forensics(
+    source: Path,
+    *,
+    output: Path | None = None,
+    include_source_path: bool = False,
+    profile_name: str = "taiko3ds3_jp_pack1",
+) -> dict[str, Any]:
+    """Run Audio Scan once, then analyze its successful NAAC records in memory."""
+
+    report = run_audio_scan(
+        source,
+        include_source_path=include_source_path,
+        profile_name=profile_name,
+    )
+    payload = analyze_header_forensics(
+        report.records,
+        source=report.source,
+        source_size=report.source_size,
+        source_sha256=report.source_sha256,
+        audio_report=report,
+    )
+    if include_source_path:
+        payload["source"]["absolute_path"] = str(report.source.resolve())
+    if output is not None:
+        _write_json_atomic(output, payload)
+    return payload
