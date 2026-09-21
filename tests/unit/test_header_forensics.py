@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 import json
 import struct
 from pathlib import Path
@@ -45,6 +46,16 @@ def _record(
     )
 
 
+def _with_corrupted_first_table_entry(record: AudioFileAnalysis) -> AudioFileAnalysis:
+    assert record.inspection is not None
+    header = bytearray(record.inspection.unknown_header_bytes)
+    header[0x30] ^= 0xFF
+    return replace(
+        record,
+        inspection=replace(record.inspection, unknown_header_bytes=bytes(header)),
+    )
+
+
 def test_forensics_field_confidence_requires_five_files_and_three_values() -> None:
     records = [_record(index, frame_count=index + 3) for index in range(4)]
     candidate = next(
@@ -85,7 +96,51 @@ def test_frame_offset_table_uses_formula_and_stays_semantic_unknown() -> None:
     assert first["predicted_stride"] == 1
     assert first["exact_match"] is True
     assert analysis["cohort_summary"]["mpeg_id_0"]["exact_matches_over_files"] == "5 / 5"
+    assert analysis["cohort_summary"]["mpeg_id_0"]["exact_match_ratio"] == 1.0
+    assert (
+        analysis["cohort_summary"]["mpeg_id_0"]["confidence"]
+        == "FRAME_OFFSET_ARRAY_STRONGLY_CORRELATED"
+    )
     assert analysis["semantic_status"] == "UNKNOWN"
+
+
+def test_frame_offset_table_one_of_five_is_only_possible() -> None:
+    records = [_record(index, frame_count=index + 3) for index in range(5)]
+    records[0] = _with_corrupted_first_table_entry(records[0])
+
+    summary = frame_offset_table_hypothesis(records)["cohort_summary"]["main"]
+
+    assert summary["files"] == 5
+    assert summary["exact_matches"] == 4
+    assert summary["exact_match_ratio"] == 0.8
+    assert summary["confidence"] == "POSSIBLE"
+
+
+def test_frame_offset_table_four_of_four_is_not_strong() -> None:
+    records = [_record(index, frame_count=index + 3) for index in range(4)]
+
+    summary = frame_offset_table_hypothesis(records)["cohort_summary"]["main"]
+
+    assert summary["files"] == 4
+    assert summary["exact_matches"] == 4
+    assert summary["exact_match_ratio"] == 1.0
+    assert summary["confidence"] == "POSSIBLE"
+
+
+def test_frame_offset_table_zero_of_n_is_unknown() -> None:
+    records = [
+        _with_corrupted_first_table_entry(
+            _record(index, frame_count=index + 3, mpeg0_table=False)
+        )
+        for index in range(5)
+    ]
+
+    summary = frame_offset_table_hypothesis(records)["cohort_summary"]["mpeg_id_0"]
+
+    assert summary["files"] == 5
+    assert summary["exact_matches"] == 0
+    assert summary["exact_match_ratio"] == 0.0
+    assert summary["confidence"] == "UNKNOWN"
 
 
 def test_forensics_json_has_schema_and_no_full_header_dump(tmp_path: Path) -> None:

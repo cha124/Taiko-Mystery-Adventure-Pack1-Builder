@@ -411,16 +411,29 @@ def _table_for_record(record: AudioFileAnalysis) -> dict[str, Any]:
 
 def _table_group_summary(results: list[dict[str, Any]]) -> dict[str, Any]:
     exact = sum(item["exact_match"] for item in results)
+    files = len(results)
     strides = Counter(
         str(item["observed_best_stride"])
         for item in results
         if item["observed_best_stride"] is not None
     )
     entries = [item["entry_count"] for item in results]
+    exact_match_ratio = exact / files if files else 0.0
+    if files == 0:
+        confidence = "UNKNOWN"
+    elif files >= 5 and exact == files:
+        confidence = "FRAME_OFFSET_ARRAY_STRONGLY_CORRELATED"
+    elif exact > 0:
+        confidence = "POSSIBLE"
+    else:
+        confidence = "UNKNOWN"
     return {
         "exact_matches": exact,
-        "files": len(results),
-        "match_ratio": exact / len(results) if results else 0.0,
+        "files": files,
+        "exact_match_ratio": exact_match_ratio,
+        # Keep the historical key for consumers that used the generic name.
+        "match_ratio": exact_match_ratio,
+        "confidence": confidence,
         "entry_count_range": (
             {"minimum": min(entries), "maximum": max(entries)} if entries else None
         ),
@@ -460,6 +473,18 @@ def frame_offset_table_hypothesis(records: Iterable[AudioFileAnalysis]) -> dict[
         summary[name]["exact_matches_over_files"] = (
             f"{summary[name]['exact_matches']} / {summary[name]['files']}"
         )
+    cohort_confidence = {
+        name: summary[name]["confidence"] for name in groups
+    }
+    if any(
+        value == "FRAME_OFFSET_ARRAY_STRONGLY_CORRELATED"
+        for value in cohort_confidence.values()
+    ):
+        confidence = "PARTIAL_COHORT_EVIDENCE"
+    elif any(value == "POSSIBLE" for value in cohort_confidence.values()):
+        confidence = "POSSIBLE"
+    else:
+        confidence = "UNKNOWN"
     return {
         "array_start_offset": TABLE_START,
         "array_start_offset_hex": f"0x{TABLE_START:X}",
@@ -468,10 +493,9 @@ def frame_offset_table_hypothesis(records: Iterable[AudioFileAnalysis]) -> dict[
         "predicted_stride_formula": "ceil(frame_count / capacity)",
         "per_file": per_file,
         "cohort_summary": summary,
+        "cohort_confidence": cohort_confidence,
         "tail_analysis_by_mpeg_id": tail_by_mpeg,
-        "confidence": "FRAME_OFFSET_ARRAY_STRONGLY_CORRELATED"
-        if any(item["exact_match"] for item in per_file)
-        else "UNKNOWN",
+        "confidence": confidence,
         "semantic_status": "UNKNOWN",
     }
 
