@@ -335,6 +335,9 @@ def run_audio_forensics(
 ) -> dict[str, Any]:
     """Run Audio Scan once, then analyze its successful NAAC records in memory."""
 
+    source = source.resolve()
+    if output is not None and output.resolve() == source:
+        raise ValueError("audio forensics output must not overwrite the source CIA")
     report = run_audio_scan(
         source,
         include_source_path=include_source_path,
