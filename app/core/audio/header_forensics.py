@@ -334,21 +334,43 @@ def _table_for_record(record: AudioFileAnalysis) -> dict[str, Any]:
     header = inspection.unknown_header_bytes
     capacity = max((inspection.header_size - TABLE_START) // TABLE_ENTRY_WIDTH, 0)
     frame_offsets = inspection.frame_offsets
+    frame_count = len(frame_offsets)
     predicted_stride = (
-        (len(frame_offsets) + capacity - 1) // capacity if capacity and frame_offsets else None
+        (frame_count + capacity - 1) // capacity if capacity and frame_offsets else None
     )
     if capacity == 0 or not frame_offsets:
+        tail = {
+            "tail_size": 0,
+            "zero_bytes": 0,
+            "non_zero_bytes": 0,
+            "zero_ratio": 1.0,
+        }
         return {
             "content_index": record.content_index,
             "role": record.role,
             "mpeg_id": inspection.adts.mpeg_id,
+            "frame_count": frame_count,
+            "capacity": capacity,
             "predicted_stride": predicted_stride,
             "observed_best_stride": None,
+            "exact_prefix_match": False,
+            "predicted_stride_match": False,
+            "generation_rule_match": False,
+            # Compatibility alias: exact_match means exact_prefix_match.
             "exact_match": False,
             "entry_count": 0,
-            "capacity": capacity,
             "unused_entries": capacity,
             "tail_zero_ratio": 1.0,
+            "tail_size": tail["tail_size"],
+            "tail_zero_bytes": tail["zero_bytes"],
+            "tail_non_zero_bytes": tail["non_zero_bytes"],
+            "table_tail_zero_ratio": tail["zero_ratio"],
+            "table_tail_zero": False,
+            "matched_entries": 0,
+            "match_ratio": 0.0,
+            "first_mismatch_index": None,
+            "remaining_header_bytes_zero_ratio": 1.0,
+            "tail": tail,
             "status": "NOT_APPLICABLE",
             "strides": [],
         }
@@ -388,56 +410,87 @@ def _table_for_record(record: AudioFileAnalysis) -> dict[str, Any]:
         ),
     )
     entry_count = best["expected_entry_count"]
-    exact_match = bool(entry_count and best["matched_entries"] == entry_count)
+    exact_prefix_match = bool(entry_count and best["matched_entries"] == entry_count)
+    predicted_stride_match = bool(
+        predicted_stride is not None and best["stride"] == predicted_stride
+    )
+    generation_rule_match = exact_prefix_match and predicted_stride_match
+    tail = best["tail"]
     return {
         "content_index": record.content_index,
         "role": record.role,
         "mpeg_id": inspection.adts.mpeg_id,
+        "frame_count": frame_count,
+        "capacity": capacity,
         "predicted_stride": predicted_stride,
         "observed_best_stride": best["stride"],
-        "exact_match": exact_match,
+        "exact_prefix_match": exact_prefix_match,
+        "predicted_stride_match": predicted_stride_match,
+        "generation_rule_match": generation_rule_match,
+        # Compatibility alias: exact_match means exact_prefix_match.
+        "exact_match": exact_prefix_match,
         "entry_count": entry_count,
-        "capacity": capacity,
         "unused_entries": max(capacity - entry_count, 0),
-        "tail_zero_ratio": best["tail"]["zero_ratio"],
+        "tail_zero_ratio": tail["zero_ratio"],
+        "tail_size": tail["tail_size"],
+        "tail_zero_bytes": tail["zero_bytes"],
+        "tail_non_zero_bytes": tail["non_zero_bytes"],
+        "table_tail_zero_ratio": tail["zero_ratio"],
+        "table_tail_zero": tail["non_zero_bytes"] == 0,
         "matched_entries": best["matched_entries"],
         "match_ratio": best["match_ratio"],
         "first_mismatch_index": best["first_mismatch_index"],
         "remaining_header_bytes_zero_ratio": best["remaining_header_bytes_zero_ratio"],
-        "tail": best["tail"],
+        "tail": tail,
         "strides": stride_results,
     }
 
 
 def _table_group_summary(results: list[dict[str, Any]]) -> dict[str, Any]:
-    exact = sum(item["exact_match"] for item in results)
+    exact_prefix_matches = sum(item["exact_prefix_match"] for item in results)
+    predicted_stride_matches = sum(item["predicted_stride_match"] for item in results)
+    generation_rule_matches = sum(item["generation_rule_match"] for item in results)
     files = len(results)
     strides = Counter(
         str(item["observed_best_stride"])
         for item in results
         if item["observed_best_stride"] is not None
     )
+    predicted_strides = Counter(
+        str(item["predicted_stride"])
+        for item in results
+        if item["predicted_stride"] is not None
+    )
     entries = [item["entry_count"] for item in results]
-    exact_match_ratio = exact / files if files else 0.0
+    exact_prefix_match_ratio = exact_prefix_matches / files if files else 0.0
+    generation_rule_match_ratio = generation_rule_matches / files if files else 0.0
     if files == 0:
         confidence = "UNKNOWN"
-    elif files >= 5 and exact == files:
-        confidence = "FRAME_OFFSET_ARRAY_STRONGLY_CORRELATED"
-    elif exact > 0:
+    elif files >= 5 and generation_rule_matches == files:
+        confidence = "FRAME_OFFSET_GENERATION_RULE_STRONGLY_CORRELATED"
+    elif generation_rule_matches > 0:
         confidence = "POSSIBLE"
     else:
         confidence = "UNKNOWN"
     return {
-        "exact_matches": exact,
         "files": files,
-        "exact_match_ratio": exact_match_ratio,
+        "exact_prefix_matches": exact_prefix_matches,
+        "predicted_stride_matches": predicted_stride_matches,
+        "generation_rule_matches": generation_rule_matches,
+        "generation_rule_match_ratio": generation_rule_match_ratio,
+        # Compatibility aliases: the historical exact_* fields describe the
+        # prefix comparison only, not the complete generation rule.
+        "exact_matches": exact_prefix_matches,
+        "exact_prefix_match_ratio": exact_prefix_match_ratio,
+        "exact_match_ratio": exact_prefix_match_ratio,
         # Keep the historical key for consumers that used the generic name.
-        "match_ratio": exact_match_ratio,
+        "match_ratio": exact_prefix_match_ratio,
         "confidence": confidence,
         "entry_count_range": (
             {"minimum": min(entries), "maximum": max(entries)} if entries else None
         ),
         "stride_distribution": dict(sorted(strides.items())),
+        "predicted_stride_distribution": dict(sorted(predicted_strides.items())),
     }
 
 
@@ -473,11 +526,14 @@ def frame_offset_table_hypothesis(records: Iterable[AudioFileAnalysis]) -> dict[
         summary[name]["exact_matches_over_files"] = (
             f"{summary[name]['exact_matches']} / {summary[name]['files']}"
         )
+        summary[name]["generation_rule_matches_over_files"] = (
+            f"{summary[name]['generation_rule_matches']} / {summary[name]['files']}"
+        )
     cohort_confidence = {
         name: summary[name]["confidence"] for name in groups
     }
     if any(
-        value == "FRAME_OFFSET_ARRAY_STRONGLY_CORRELATED"
+        value == "FRAME_OFFSET_GENERATION_RULE_STRONGLY_CORRELATED"
         for value in cohort_confidence.values()
     ):
         confidence = "PARTIAL_COHORT_EVIDENCE"
@@ -491,6 +547,11 @@ def frame_offset_table_hypothesis(records: Iterable[AudioFileAnalysis]) -> dict[
         "entry_width": TABLE_ENTRY_WIDTH,
         "capacity_formula": "(header_size - 0x30) // 4",
         "predicted_stride_formula": "ceil(frame_count / capacity)",
+        "exact_match_semantics": "exact_match is an alias for exact_prefix_match",
+        "generation_rule_semantics": (
+            "generation_rule_match = exact_prefix_match and predicted_stride_match; "
+            "table_tail_zero is observational only"
+        ),
         "per_file": per_file,
         "cohort_summary": summary,
         "cohort_confidence": cohort_confidence,
@@ -840,11 +901,11 @@ def _unresolved(
         if mpeg1["status"] == "NOT_FOUND":
             unresolved.append(f"MPEG ID 1 {target} candidate was NOT_FOUND.")
     mpeg1_table = table["cohort_summary"]["mpeg_id_1"]
-    if mpeg1_table["exact_matches"] != mpeg1_table["files"]:
+    if mpeg1_table["generation_rule_matches"] != mpeg1_table["files"]:
         if not alternatives["files_with_candidate"]:
             unresolved.append("No alternative MPEG ID 1 monotonic offset array candidate was found.")
         else:
-            unresolved.append("MPEG ID 1 offset representation is not an exact all-file rule.")
+            unresolved.append("MPEG ID 1 offset representation is not an exact all-file generation rule.")
     unresolved.extend(
         [
             "Encoder delay is UNKNOWN.",
@@ -897,9 +958,11 @@ def analyze_header_forensics(
             item["confidence"] == "STRONGLY_CORRELATED"
             for item in mpeg1_decoded["candidates"][:1] + mpeg1_payload["candidates"][:1]
         )
-        and table["cohort_summary"]["mpeg_id_0"]["exact_matches"]
+        and table["cohort_summary"]["mpeg_id_0"]["files"] > 0
+        and table["cohort_summary"]["mpeg_id_0"]["generation_rule_matches"]
         == table["cohort_summary"]["mpeg_id_0"]["files"]
-        and table["cohort_summary"]["mpeg_id_1"]["exact_matches"]
+        and table["cohort_summary"]["mpeg_id_1"]["files"] > 0
+        and table["cohort_summary"]["mpeg_id_1"]["generation_rule_matches"]
         == table["cohort_summary"]["mpeg_id_1"]["files"]
     )
     return {
