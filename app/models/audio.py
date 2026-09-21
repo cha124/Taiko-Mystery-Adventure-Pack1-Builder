@@ -12,6 +12,12 @@ class AudioIssue:
     severity: AudioSeverity
     message: str
     offset: int | None = None
+    # These fields are deliberately optional so existing audio JSON keeps its
+    # original shape unless an issue is translated from another diagnostic
+    # layer (for example, the Pack1 analyzer).
+    details: dict[str, Any] = field(default_factory=dict)
+    source_code: str | None = None
+    classification: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         result: dict[str, Any] = {
@@ -21,6 +27,12 @@ class AudioIssue:
         }
         if self.offset is not None:
             result["offset"] = self.offset
+        if self.details or self.source_code is not None:
+            result["details"] = dict(self.details)
+        if self.source_code is not None:
+            result["source_code"] = self.source_code
+        if self.classification is not None:
+            result["classification"] = self.classification
         return result
 
 
@@ -140,6 +152,11 @@ class NAACInspection:
     adts: ADTSStreamStatistics | None = None
     seek_candidates: tuple[SeekTableCandidate, ...] = ()
     issues: tuple[AudioIssue, ...] = ()
+    # Kept in memory for header-forensics hypotheses.  They are intentionally
+    # not serialized as per-frame arrays in normal audio reports.
+    frame_offsets: tuple[int, ...] = ()
+    frame_end_offsets: tuple[int, ...] = ()
+    frame_payload_lengths: tuple[int, ...] = ()
 
 
 @dataclass(frozen=True)
